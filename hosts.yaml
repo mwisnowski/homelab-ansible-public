@@ -62,14 +62,3 @@ linux_hosts:
     ansible_user: example
     ansible_python_interpreter: /usr/bin/python3
 
-hypervisor:
-  hosts:
-    pve1:
-      ansible_host: X.X.X.9
-    pve2:
-      ansible_host: X.X.X.10
-
-windows:
-  hosts:
-      matt-pc:
-        ansible_host: X.X.X.5
