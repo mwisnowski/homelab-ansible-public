@@ -1,0 +1,25 @@
+# Complete Monitoring Infrastructure Setup
+---
+# This playbook sets up Node Exporter on all Linux hosts and the monitoring stack on the monitoring server
+
+- name: "Monitoring Setup - Phase 1: Deploy Node Exporter on all Linux hosts"
+  import_playbook: node-exporter.yml
+  tags:
+    - monitoring
+    - node-exporter
+    - agents
+    - monitoring-agents
+    - node-exporter-setup
+    - node-exporter-install
+
+- name: "Monitoring Setup - Phase 2: Deploy Prometheus, Grafana, and central monitoring"
+  import_playbook: monitoring-stack.yml
+  tags:
+    - monitoring
+    - prometheus
+    - grafana
+    - monitoring-server
+    - monitoring-stack
+    - monitoring-deploy
+    - prometheus-setup
+    - grafana-setup

@@ -1,0 +1,239 @@
+---
+- name: SSH Key Management for Linux Hosts
+  hosts: linux_hosts
+  gather_facts: true
+  become: true
+  vars:
+    ssh_user: "example"
+    ssh_key_type: "ed25519"
+    ssh_key_bits: 256
+    ssh_key_comment: "{{ ssh_user }}@homelab-{{ ansible_hostname }}"
+    ssh_key_file: "/home/{{ ssh_user }}/.ssh/id_{{ ssh_key_type }}"
+    ssh_config_file: "/home/{{ ssh_user }}/.ssh/config"
+    ssh_known_hosts_file: "/home/{{ ssh_user }}/.ssh/known_hosts"
+
+  tasks:
+    - name: Ensure user exists
+      ansible.builtin.user:
+        name: "{{ ssh_user }}"
+        state: present
+        shell: /bin/bash
+        create_home: true
+      tags:
+        - user-setup
+        - ssh-setup
+        - ssh-user
+
+    - name: Ensure .ssh directory exists
+      ansible.builtin.file:
+        path: "/home/{{ ssh_user }}/.ssh"
+        state: directory
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: '0700'
+      tags:
+        - ssh-setup
+        - directories
+        - ssh-directories
+
+    - name: Check if SSH key already exists
+      ansible.builtin.stat:
+        path: "{{ ssh_key_file }}"
+      register: ssh_key_stat
+      tags:
+        - ssh-key-check
+        - validation
+        - ssh-verify
+
+    - name: Generate ED25519 SSH key pair
+      ansible.builtin.user:
+        name: "{{ ssh_user }}"
+        generate_ssh_key: true
+        ssh_key_type: "{{ ssh_key_type }}"
+        ssh_key_bits: "{{ ssh_key_bits }}"
+        ssh_key_file: "{{ ssh_key_file }}"
+        ssh_key_comment: "{{ ssh_key_comment }}"
+        force: false  # Don't overwrite existing keys
+      register: ssh_key_generated
+      tags:
+        - ssh-key-generate
+        - ssh-keys
+        - key-generation
+
+    - name: Read public key content
+      ansible.builtin.slurp:
+        src: "{{ ssh_key_file }}.pub"
+      register: public_key_content
+      tags:
+        - ssh-key-read
+        - gather-keys
+        - ssh-keys
+
+    - name: Display generated key information
+      ansible.builtin.debug:
+        msg: |
+          SSH Key generated on {{ inventory_hostname }}:
+          Key file: {{ ssh_key_file }}
+          Comment: {{ ssh_key_comment }}
+          Public key: {{ public_key_content.content | b64decode | trim }}
+      when: ssh_key_generated.changed
+      tags:
+        - ssh-key-info
+        - info
+        - ssh-info
+
+# Second play to distribute keys among all hosts
+- name: Distribute SSH Keys Among Linux Hosts
+  hosts: linux_hosts
+  gather_facts: true
+  become: true
+  vars:
+    ssh_user: "example"
+    ssh_key_type: "ed25519"
+    ssh_key_file: "/home/{{ ssh_user }}/.ssh/id_{{ ssh_key_type }}"
+
+  tasks:
+    - name: Gather public keys from all hosts
+      ansible.builtin.slurp:
+        src: "{{ ssh_key_file }}.pub"
+      register: host_public_keys
+      tags:
+        - gather-keys
+        - ssh-keys
+        - key-collection
+
+    - name: Create authorized_keys entries for all hosts
+      ansible.builtin.set_fact:
+        all_public_keys: "{{ groups['linux_hosts'] | map('extract', hostvars, 'host_public_keys') | selectattr('content', 'defined') | map(attribute='content') | map('b64decode') | map('trim') | list }}"
+      run_once: true
+      tags:
+        - prepare-keys
+        - ssh-keys
+        - key-preparation
+
+    - name: Add all public keys to authorized_keys
+      ansible.posix.authorized_key:
+        user: "{{ ssh_user }}"
+        key: "{{ item }}"
+        state: present
+        comment: "Homelab host key"
+      loop: "{{ all_public_keys }}"
+      when: all_public_keys is defined
+      tags:
+        - distribute-keys
+        - ssh-keys
+        - authorized-keys
+
+    - name: Create SSH config for easy host access
+      ansible.builtin.template:
+        src: "../templates/ssh_config.j2"
+        dest: "{{ ssh_config_file }}"
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: '0600'
+        backup: true
+      tags:
+        - ssh-config
+        - configuration
+        - ssh-configuration
+
+    - name: Add all hosts to known_hosts
+      ansible.builtin.known_hosts:
+        name: "{{ item }}"
+        key: "{{ lookup('pipe', 'ssh-keyscan -t ed25519 ' + item) }}"
+        path: "{{ ssh_known_hosts_file }}"
+        state: present
+      loop: "{{ groups['linux_hosts'] | map('extract', hostvars, 'ansible_host') | list }}"
+      ignore_errors: true
+      become_user: "{{ ssh_user }}"
+      tags:
+        - known-hosts
+        - ssh-known-hosts
+        - host-keys
+
+    - name: Add hostnames to known_hosts
+      ansible.builtin.known_hosts:
+        name: "{{ hostvars[item]['inventory_hostname'] }}"
+        key: "{{ lookup('pipe', 'ssh-keyscan -t ed25519 ' + hostvars[item]['ansible_host']) }}"
+        path: "{{ ssh_known_hosts_file }}"
+        state: present
+      loop: "{{ groups['linux_hosts'] }}"
+      ignore_errors: true
+      become_user: "{{ ssh_user }}"
+      tags:
+        - known-hosts
+        - ssh-known-hosts
+        - host-keys
+
+    - name: Set proper ownership for SSH files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: "{{ '0600' if item.endswith(('id_ed25519', 'config')) else '0644' }}"
+      loop:
+        - "{{ ssh_key_file }}"
+        - "{{ ssh_key_file }}.pub"
+        - "{{ ssh_config_file }}"
+        - "{{ ssh_known_hosts_file }}"
+      ignore_errors: true
+      tags:
+        - ssh-permissions
+        - permissions
+        - file-permissions
+
+# Third play to verify connectivity
+- name: Verify SSH Connectivity Between Hosts
+  hosts: linux_hosts
+  gather_facts: false
+  become: true
+  become_user: "{{ ssh_user | default('example') }}"
+  vars:
+    ssh_user: "example"
+
+  tasks:
+    - name: Test SSH connectivity to other hosts
+      ansible.builtin.command:
+        cmd: ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no {{ ssh_user }}@{{ hostvars[item]['ansible_host'] }} 'hostname'
+      loop: "{{ groups['linux_hosts'] }}"
+      when: item != inventory_hostname
+      register: ssh_test_results
+      ignore_errors: true
+      changed_when: false
+      tags:
+        - verify-ssh
+        - ssh-test
+        - connectivity-test
+        - never  # Only run when specifically requested
+
+    - name: Display SSH test results
+      ansible.builtin.debug:
+        msg: |
+          SSH Test from {{ inventory_hostname }} to {{ item.item }}:
+          Status: {{ 'SUCCESS' if item.rc == 0 else 'FAILED' }}
+          Response: {{ item.stdout if item.rc == 0 else item.stderr }}
+      loop: "{{ ssh_test_results.results }}"
+      when: 
+        - ssh_test_results is defined
+        - item.item != inventory_hostname
+      tags:
+        - verify-ssh
+        - ssh-test
+        - info
+        - never
+
+    - name: Summary of SSH connectivity
+      ansible.builtin.debug:
+        msg: |
+          SSH Key Distribution Summary for {{ inventory_hostname }}:
+          - ED25519 key generated: {{ ssh_key_file }}
+          - Public key distributed to all hosts
+          - SSH config created for easy access
+          - Known hosts populated
+          {% if ssh_test_results is defined %}
+          - Connectivity tests: {{ ssh_test_results.results | selectattr('rc', 'equalto', 0) | list | length }}/{{ ssh_test_results.results | length }} successful
+          {% endif %}
+      tags:
+        - ssh-summary
+        - info
+        - summary

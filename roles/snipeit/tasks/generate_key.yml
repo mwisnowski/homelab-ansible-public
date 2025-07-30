@@ -1,0 +1,30 @@
+---
+- name: Check if APP_KEY is already set
+  ansible.builtin.debug:
+    msg: "Using existing APP_KEY"
+  when: snipeit_app_key is defined and snipeit_app_key != ""
+
+- name: Generate new APP_KEY if needed
+  ansible.builtin.shell: |
+    docker run --rm {{ snipeit_image }} php artisan key:generate --show
+  register: generated_app_key
+  when: snipeit_app_key is not defined or snipeit_app_key == ""
+  tags:
+    - snipeit-key
+
+- name: Set snipeit_app_key fact from generated key
+  ansible.builtin.set_fact:
+    snipeit_app_key: "{{ generated_app_key.stdout | trim }}"
+  when: generated_app_key is defined and generated_app_key.stdout is defined
+  tags:
+    - snipeit-key
+
+- name: Display generated APP_KEY (for manual update)
+  ansible.builtin.debug:
+    msg: |
+      Generated APP_KEY: {{ generated_app_key.stdout | trim }}
+      Please add this to your group_vars or host_vars as:
+      snipeit_app_key: "{{ generated_app_key.stdout | trim }}"
+  when: generated_app_key is defined and generated_app_key.stdout is defined
+  tags:
+    - snipeit-key

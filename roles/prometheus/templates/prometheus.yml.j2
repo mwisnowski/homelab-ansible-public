@@ -1,0 +1,78 @@
+global:
+  scrape_interval: {{ prometheus_global_scrape_interval }}
+  evaluation_interval: {{ prometheus_global_evaluation_interval }}
+{% if prometheus_external_labels %}
+  external_labels:
+{% for key, value in prometheus_external_labels.items() %}
+    {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}
+
+{% if prometheus_alertmanager_enabled %}
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - {{ prometheus_alertmanager_url | regex_replace('^https?://') }}
+{% endif %}
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+{% if groups['linux_hosts'] is defined %}
+  # Site-wide Node Exporter job (all hosts in one job)
+  - job_name: 'Homelab'
+    static_configs:
+      - targets:
+{% for host in groups['linux_hosts'] %}
+        - '{{ hostvars[host].ansible_host | default(host) }}:{{ prometheus_node_exporter_port }}'
+{% endfor %}
+        labels:
+          environment: 'homelab'
+          site: 'example'
+    scrape_interval: {{ prometheus_global_scrape_interval }}
+    metrics_path: {{ prometheus_node_exporter_path }}
+    scheme: http
+    metric_relabel_configs:
+      - source_labels: [__address__]
+        regex: '([^:]+):.*'
+        target_label: hostname
+        replacement: '${1}'
+{% for host in groups['linux_hosts'] %}
+      - source_labels: [__address__]
+        regex: '{{ hostvars[host].ansible_host | default(host) }}:.*'
+        target_label: node_name
+        replacement: '{{ host }}'
+{% endfor %}
+
+  # Individual Node Exporters per host (for granular control)
+{% for host in groups['linux_hosts'] %}
+  - job_name: 'node-exporter-{{ host }}'
+    static_configs:
+      - targets: ['{{ hostvars[host].ansible_host | default(host) }}:{{ prometheus_node_exporter_port }}']
+    scrape_interval: {{ prometheus_global_scrape_interval }}
+    scrape_timeout: {{ prometheus_scrape_timeout }}
+    metrics_path: {{ prometheus_node_exporter_path }}
+{% endfor %}
+{% endif %}
+
+{% for target in prometheus_static_targets %}
+  - job_name: '{{ target.job_name }}'
+    static_configs:
+      - targets: {{ target.targets | to_json }}
+{% if target.scrape_interval is defined %}
+    scrape_interval: {{ target.scrape_interval }}
+{% endif %}
+{% if target.scrape_timeout is defined %}
+    scrape_timeout: {{ target.scrape_timeout }}
+{% endif %}
+{% if target.metrics_path is defined %}
+    metrics_path: {{ target.metrics_path }}
+{% endif %}
+{% endfor %}

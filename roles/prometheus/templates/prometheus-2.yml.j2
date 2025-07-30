@@ -1,0 +1,48 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Site-wide Node Exporter job (all hosts in one job)
+  - job_name: 'Homelab'
+    static_configs:
+      - targets:
+{% for host in groups['linux_hosts'] %}
+        - '{{ hostvars[host].ansible_host | default(hostvars[host].inventory_hostname) }}:5100'
+{% endfor %}
+        labels:
+          environment: 'homelab'
+          site: 'example'
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http
+    metric_relabel_configs:
+      - source_labels: [__address__]
+        regex: '([^:]+):.*'
+        target_label: hostname
+        replacement: '${1}'
+{% for host in groups['linux_hosts'] %}
+      - source_labels: [__address__]
+        regex: '{{ hostvars[host].ansible_host | default(hostvars[host].inventory_hostname) }}:.*'
+        target_label: node_name
+        replacement: '{{ host }}'
+{% endfor %}
+
+  # Individual Node Exporters per host (for granular control)
+{% for host in groups['linux_hosts'] %}
+  - job_name: 'node-exporter-{{ host }}'
+    static_configs:
+      - targets: ['{{ hostvars[host].ansible_host | default(hostvars[host].inventory_hostname) }}:5100']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http
+{% endfor %}

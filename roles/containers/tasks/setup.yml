@@ -1,0 +1,19 @@
+---
+- name: Create container directories
+  ansible.builtin.file:
+    path: "{{ item.dir }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ item.owner | default(containers_user) }}"
+    group: "{{ item.group | default(containers_group) }}"
+  loop: "{{ containers }}"
+  become: true
+  when: containers is defined and containers | length > 0
+
+- name: Create external Docker networks
+  community.docker.docker_network:
+    name: "{{ item }}"
+    driver: bridge
+    state: present
+  loop: "{{ create_external_networks }}"
+  when: create_external_networks is defined and create_external_networks | length > 0

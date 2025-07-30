@@ -1,0 +1,14 @@
+---
+- name: Deploy NGINX proxy docker-compose file
+  ansible.builtin.template:
+    src: "nginx-proxy-compose.yml.j2"
+    dest: "{{ nginx_proxy_dir }}/docker-compose.yml"
+    mode: '0644'
+    backup: true
+  notify: restart nginx proxy
+
+- name: Start NGINX proxy container
+  community.docker.docker_compose_v2:
+    project_src: "{{ nginx_proxy_dir }}"
+    state: present
+    pull: "{{ container_pull_policy | default('missing') }}"

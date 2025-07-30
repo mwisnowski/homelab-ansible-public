@@ -1,0 +1,12 @@
+---
+- name: Deploy Snipe-IT environment configuration
+  ansible.builtin.template:
+    src: "snipeit.env.j2"
+    dest: "{{ snipeit_dir }}/.env"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+    backup: true
+  notify: restart snipeit
+  tags:
+    - config-deploy

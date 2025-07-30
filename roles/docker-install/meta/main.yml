@@ -1,0 +1,29 @@
+---
+dependencies: []
+
+galaxy_info:
+  role_name: docker-install
+  author: Matt Wisnowski
+  company: Wiz-Ops
+  company_url: https://wiz-ops.com
+  description: Ansible role to manage Docker installation and configuration.
+  license: "license (BSD, MIT)"
+  min_ansible_version: "2.18"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - bionic
+        - focal
+        - jammy
+        - noble
+  galaxy_tags:
+    - automation
+    - compose
+    - container
+    - container-management
+    - devops
+    - docker
+    - infrastructure
+    - orchestration
+    - system
+    - web

@@ -1,0 +1,48 @@
+---
+- name: Deploy Monitoring Stack with Reverse Proxy
+  hosts: monitoring
+  gather_facts: true
+  become: true
+  
+  pre_tasks:
+    - name: Ensure Docker network exists
+      community.docker.docker_network:
+        name: monitoring
+        driver: bridge
+        state: present
+      tags:
+        - network
+        - setup
+
+  roles:
+    - role: reverse-nginx-proxy
+      vars:
+        reverse_proxy_services:
+          - name: grafana
+            subdomain: grafana
+            upstream: "grafana:3000"
+          - name: prometheus
+            subdomain: prometheus  
+            upstream: "prometheus:9090"
+      when: reverse_proxy_enabled | default(false)  # Use reverse_proxy_enabled
+
+    - role: prometheus
+      vars:
+        prometheus_enable_reverse_proxy: "{{ reverse_proxy_enabled | default(false) }}"
+        prometheus_subdomain: prometheus
+
+    - role: grafana
+      vars:
+        grafana_enable_reverse_proxy: "{{ reverse_proxy_enabled | default(false) }}"
+        grafana_subdomain: grafana
+
+  post_tasks:
+    - name: Display monitoring stack information
+      ansible.builtin.debug:
+        msg: |
+          Monitoring Stack Deployed:
+          - Prometheus: http://{{ ansible_default_ipv4.address }}:9090
+          {% if reverse_proxy_enabled | default(false) %}
+          - Prometheus (via proxy): {{ 'https' if web_containers_ssl_enabled | default(false) else 'http' }}://prometheus.{{ reverse_proxy_domain }}
+          - Grafana (via proxy): {{ 'https' if web_containers_ssl_enabled | default(false) else 'http' }}://grafana.{{ reverse_proxy_domain }}
+          {% endif %}

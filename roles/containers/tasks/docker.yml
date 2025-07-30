@@ -1,0 +1,22 @@
+---
+- name: Ensure Docker is installed
+  ansible.builtin.package:
+    name: "{{ docker_packages }}"
+    state: present
+  become: true
+
+- name: Ensure Docker service is started
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+  become: true
+
+- name: Add users to docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_users | default([ansible_user]) }}"
+  become: true
+  when: docker_users is defined or ansible_user is defined

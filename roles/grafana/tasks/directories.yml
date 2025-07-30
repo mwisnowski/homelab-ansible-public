@@ -1,0 +1,30 @@
+---
+- name: Create Grafana directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+  loop:
+    - "{{ grafana_dir }}"
+    - "{{ grafana_data_dir }}"
+    - "{{ grafana_config_dir }}"
+    - "{{ grafana_provisioning_dir }}"
+    - "{{ grafana_provisioning_dir }}/datasources"
+    - "{{ grafana_provisioning_dir }}/dashboards"
+    - "{{ grafana_provisioning_dir }}/notifiers"
+  become: true
+  tags:
+    - directories
+
+- name: Set correct permissions for Grafana data directory
+  ansible.builtin.file:
+    path: "{{ grafana_data_dir }}"
+    owner: "{{ grafana_user_id }}"
+    group: "{{ grafana_group_id }}"
+    mode: '0755'
+    recurse: true
+  become: true
+  tags:
+    - permissions

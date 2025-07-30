@@ -1,0 +1,39 @@
+services:
+  grocy:
+    image: lscr.io/linuxserver/grocy:{{ grocy_version }}
+    container_name: grocy
+    environment:
+      - GROCY_CULTURE={{ grocy_culture }}
+      - GROCY_CURRENCY={{ grocy_currency }}
+      - GROCY_CALENDAR_FIRST_DAY_OF_WEEK={{ grocy_calendar_first_day_of_week }}
+      - GROCY_AUTH_CLASS={{ grocy_auth_class }}
+{% for feature, enabled in grocy_feature_flags.items() %}
+      - {{ feature }}={{ enabled | lower }}
+{% endfor %}
+    volumes:
+      - ./data:/var/www/data
+      - ./config:/var/www/config
+    ports:
+      - "{{ grocy_port }}:80"
+{% if web_containers_ssl_enabled | default(false) %}
+      - "{{ grocy_https_port }}:443"
+{% endif %}
+{% if grocy_enable_reverse_proxy %}
+    networks:
+      - {{ grocy_network_name }}
+{% else %}
+    networks:
+      - {{ grocy_network_name }}
+{% endif %}
+    restart: unless-stopped
+    user: "{{ grocy_user_id }}:{{ grocy_group_id }}"
+
+{% if grocy_enable_reverse_proxy %}
+networks:
+  {{ grocy_network_name }}:
+    external: true
+{% else %}
+networks:
+  {{ grocy_network_name }}:
+    external: true
+{% endif %}

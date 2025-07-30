@@ -1,0 +1,44 @@
+---
+- name: Deploy Grocy with Reverse Proxy
+  hosts: web
+  gather_facts: true
+  become: true
+  
+  pre_tasks:
+    - name: Ensure Docker network exists
+      community.docker.docker_network:
+        name: web-services
+        driver: bridge
+        state: present
+      tags:
+        - network
+        - setup
+
+  roles:
+    - role: reverse-nginx-proxy
+      vars:
+        reverse_proxy_services:
+          - name: grocy
+            subdomain: grocy
+            upstream: "grocy:80"
+      when: reverse_proxy_enabled | default(false)
+
+    - role: grocy
+      vars:
+        grocy_enable_reverse_proxy: "{{ reverse_proxy_enabled | default(false) }}"
+        grocy_subdomain: grocy
+
+  post_tasks:
+    - name: Display Grocy information
+      ansible.builtin.debug:
+        msg: |
+          Grocy Deployed:
+          ===============
+          
+          URL: {{ 'https' if web_containers_ssl_enabled | default(false) else 'http' }}://grocy.{{ reverse_proxy_domain | default('homelab.local') }}
+          Direct Access: http://{{ ansible_default_ipv4.address }}:9283
+          {% if web_containers_ssl_enabled | default(false) %}
+          Direct HTTPS: https://{{ ansible_default_ipv4.address }}:9443
+          {% endif %}
+      tags:
+        - info

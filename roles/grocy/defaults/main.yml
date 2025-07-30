@@ -1,0 +1,59 @@
+---
+# Grocy configuration
+grocy_version: "latest"
+grocy_port: 9283
+grocy_https_port: 9443
+grocy_enable_reverse_proxy: false
+grocy_subdomain: "grocy"
+
+# Grocy directories
+grocy_dir: "/opt/docker/containers/grocy"
+grocy_config_dir: "{{ grocy_dir }}/config"
+
+# Grocy user and permissions - use ansible_user
+grocy_user_id: "1000"
+grocy_group_id: "1000"
+grocy_user: "{{ ansible_user }}"
+grocy_group: "{{ ansible_user }}"
+
+# LinuxServer.io image configuration
+grocy_image: "lscr.io/linuxserver/grocy:{{ grocy_version }}"
+grocy_timezone: "America/Los_Angeles"
+
+# Network configuration
+grocy_network_name: "web-services"
+grocy_create_network: false
+
+# Health check configuration
+grocy_health_check_enabled: true
+grocy_health_check_retries: 30
+grocy_health_check_delay: 5
+grocy_health_check_timeout: 10
+
+# Grocy configuration
+grocy_culture: "en"
+grocy_currency: "USD"
+grocy_calendar_first_day_of_week: 1
+grocy_auth_class: "Grocy\\Middleware\\DefaultAuthMiddleware"
+grocy_login_required: true
+grocy_default_user_id: 1
+
+# Security settings
+grocy_session_cookie_secure: false
+grocy_session_cookie_httponly: true
+grocy_session_cookie_samesite: "Lax"
+
+# Database settings (uses SQLite by default)
+grocy_database_type: "sqlite"
+grocy_database_path: "/var/www/data/grocy.db"
+
+# Features
+grocy_feature_flags:
+  GROCY_FEATURE_FLAG_STOCK: true
+  GROCY_FEATURE_FLAG_SHOPPINGLIST: true
+  GROCY_FEATURE_FLAG_RECIPES: true
+  GROCY_FEATURE_FLAG_CHORES: true
+  GROCY_FEATURE_FLAG_TASKS: true
+  GROCY_FEATURE_FLAG_BATTERIES: true
+  GROCY_FEATURE_FLAG_EQUIPMENT: true
+  GROCY_FEATURE_FLAG_CALENDAR: true

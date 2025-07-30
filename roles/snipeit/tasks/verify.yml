@@ -1,0 +1,40 @@
+---
+- name: Wait for Snipe-IT to be ready
+  ansible.builtin.uri:
+    url: "http://{{ ansible_default_ipv4.address }}:{{ snipeit_port }}"
+    method: GET
+    status_code: 200
+    timeout: "{{ snipeit_health_check_timeout }}"
+  register: snipeit_ready
+  until: snipeit_ready.status == 200
+  retries: "{{ snipeit_health_check_retries }}"
+  delay: "{{ snipeit_health_check_delay }}"
+  tags:
+    - health-check
+
+- name: Display Snipe-IT information
+  ansible.builtin.debug:
+    msg: |
+      Snipe-IT Status:
+      ================
+      
+      Service: {{ snipeit_ready.status == 200 | ternary('Running', 'Failed') }}
+      URL: http://{{ ansible_default_ipv4.address }}:{{ snipeit_port }}
+      {% if snipeit_enable_reverse_proxy and snipeit_subdomain is defined %}
+      Subdomain: http://{{ snipeit_subdomain }}.{{ reverse_proxy_domain | default('homelab.local') }}
+      {% if web_containers_ssl_enabled | default(false) %}
+      Subdomain HTTPS: https://{{ snipeit_subdomain }}.{{ reverse_proxy_domain | default('homelab.local') }}
+      Direct HTTPS: https://{{ ansible_default_ipv4.address }}:{{ snipeit_https_port }}
+      {% endif %}
+      {% endif %}
+      
+      Configuration:
+      - Storage Directory: {{ snipeit_storage_dir }}
+      - Database Directory: {{ snipeit_db_dir }}
+      - Environment: {{ snipeit_app_env }}
+      
+      Setup Required:
+      Initial setup required - go to any URL above to complete Snipe-IT configuration
+      Default admin credentials will be created during setup
+  tags:
+    - info

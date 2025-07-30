@@ -1,0 +1,41 @@
+---
+- name: Wait for Grocy to be ready
+  ansible.builtin.uri:
+    url: "http://{{ ansible_default_ipv4.address }}:{{ grocy_port }}"
+    method: GET
+    status_code: 200
+    timeout: "{{ grocy_health_check_timeout }}"
+  register: grocy_ready
+  until: grocy_ready.status == 200
+  retries: "{{ grocy_health_check_retries }}"
+  delay: "{{ grocy_health_check_delay }}"
+  tags:
+    - health-check
+
+- name: Display Grocy information
+  ansible.builtin.debug:
+    msg: |
+      Grocy Status:
+      =============
+      
+      Service: {{ grocy_ready.status == 200 | ternary('Running', 'Failed') }}
+      URL: http://{{ ansible_default_ipv4.address }}:{{ grocy_port }}
+      {% if grocy_enable_reverse_proxy and grocy_subdomain is defined %}
+      Subdomain: http://{{ grocy_subdomain }}.{{ reverse_proxy_domain | default('homelab.local') }}
+      {% if web_containers_ssl_enabled | default(false) %}
+      Subdomain HTTPS: https://{{ grocy_subdomain }}.{{ reverse_proxy_domain | default('homelab.local') }}
+      Direct HTTPS: https://{{ ansible_default_ipv4.address }}:{{ grocy_https_port }}
+      {% endif %}
+      {% endif %}
+      
+      Configuration:
+      - Config Directory: {{ grocy_config_dir }}
+      - Culture: {{ grocy_culture }}
+      - Currency: {{ grocy_currency }}
+      
+      Features:
+      {% for feature, enabled in grocy_feature_flags.items() %}
+      - {{ feature.replace('GROCY_FEATURE_FLAG_', '').title() }}: {{ enabled | ternary('Enabled', 'Disabled') }}
+      {% endfor %}
+  tags:
+    - info

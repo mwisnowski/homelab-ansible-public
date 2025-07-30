@@ -1,0 +1,32 @@
+---
+- name: Include user setup tasks
+  ansible.builtin.include_tasks: user.yml
+  tags:
+    - node-exporter-user
+    - setup
+
+- name: Include installation tasks
+  ansible.builtin.include_tasks: install.yml
+  tags:
+    - node-exporter-install
+    - install
+
+- name: Include configuration tasks
+  ansible.builtin.include_tasks: configure.yml
+  tags:
+    - node-exporter-configure
+    - configure
+
+- name: Include service management tasks
+  ansible.builtin.include_tasks: service.yml
+  tags:
+    - node-exporter-service
+    - service
+
+- name: Include verification tasks
+  ansible.builtin.include_tasks: verify.yml
+  when: node_exporter_health_check_enabled
+  tags:
+    - node-exporter-verify
+    - verify
+    - health-check

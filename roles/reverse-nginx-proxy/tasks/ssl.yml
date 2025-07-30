@@ -1,0 +1,44 @@
+---
+- name: Check if wildcard certificate exists
+  ansible.builtin.stat:
+    path: "{{ ssl_cert_source_path }}"
+  register: wildcard_cert_exists
+  become: true
+
+- name: Check if wildcard key exists
+  ansible.builtin.stat:
+    path: "{{ ssl_key_source_path }}"
+  register: wildcard_key_exists
+  become: true
+
+- name: Run certificate distribution if needed
+  ansible.builtin.include_role:
+    name: certificate-distribution
+  when:
+    - not wildcard_cert_exists.stat.exists or not wildcard_key_exists.stat.exists
+  tags:
+    - cert-distribution
+
+- name: Copy wildcard SSL certificate for nginx-proxy
+  ansible.builtin.copy:
+    src: "{{ ssl_cert_source_path }}"
+    dest: "{{ nginx_proxy_ssl_dir }}/{{ reverse_proxy_domain }}.crt"
+    mode: '0644'
+    remote_src: true
+    backup: true
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  when: wildcard_cert_exists.stat.exists
+  become: true
+
+- name: Copy wildcard SSL key for nginx-proxy
+  ansible.builtin.copy:
+    src: "{{ ssl_key_source_path }}"
+    dest: "{{ nginx_proxy_ssl_dir }}/{{ reverse_proxy_domain }}.key"
+    mode: '0644'
+    remote_src: true
+    backup: true
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  when: wildcard_key_exists.stat.exists
+  become: true

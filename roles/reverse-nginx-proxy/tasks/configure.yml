@@ -1,0 +1,17 @@
+---
+- name: Generate NGINX configuration for each service
+  ansible.builtin.template:
+    src: "nginx-service.conf.j2"
+    dest: "{{ nginx_proxy_conf_dir }}/{{ item.subdomain }}.{{ reverse_proxy_domain }}.conf"
+    mode: '0644'
+    backup: true
+  loop: "{{ reverse_proxy_services }}"
+  notify: restart nginx proxy
+
+- name: Generate main NGINX configuration
+  ansible.builtin.template:
+    src: "nginx-main.conf.j2"
+    dest: "{{ nginx_proxy_dir }}/nginx.conf"
+    mode: '0644'
+    backup: true
+  notify: restart nginx proxy

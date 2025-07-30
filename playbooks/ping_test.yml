@@ -1,0 +1,19 @@
+---
+- name: Connectivity Test (Ping All Hosts)
+  hosts: all
+  gather_facts: false
+  tags:
+    - connectivity
+    - test
+
+  tasks:
+    - name: Test basic connectivity
+      ansible.builtin.ping:
+      tags:
+        - ping
+
+    - name: Display connection success
+      ansible.builtin.debug:
+        msg: "Successfully connected to {{ inventory_hostname }} ({{ ansible_host | default('hostname') }})"
+      tags:
+        - ping-results

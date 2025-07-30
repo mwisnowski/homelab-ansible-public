@@ -1,0 +1,18 @@
+---
+- name: Create 'git' group for Gitea
+  ansible.builtin.group:
+    name: "{{ gitea_group }}"
+    gid: "{{ gitea_gid }}"
+    state: present
+
+- name: Create 'git' user for Gitea
+  ansible.builtin.user:
+    name: "{{ gitea_user }}"
+    uid: "{{ gitea_uid }}"
+    group: "{{ gitea_group }}"
+    groups: docker
+    append: true
+    shell: /bin/bash
+    create_home: true
+    home: "{{ gitea_home }}"
+    state: present

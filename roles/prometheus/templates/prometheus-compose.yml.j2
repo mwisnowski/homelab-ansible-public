@@ -1,0 +1,48 @@
+services:
+  prometheus:
+    image: prom/prometheus:{{ prometheus_version }}
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time={{ prometheus_retention_time }}'
+{% if prometheus_retention_size != "0" %}
+      - '--storage.tsdb.retention.size={{ prometheus_retention_size }}'
+{% endif %}
+{% if prometheus_web_enable_lifecycle %}
+      - '--web.enable-lifecycle'
+{% endif %}
+{% if prometheus_web_enable_admin_api %}
+      - '--web.enable-admin-api'
+{% endif %}
+      - '--web.max-connections={{ prometheus_web_max_connections }}'
+      - '--web.read-timeout={{ prometheus_web_read_timeout }}'
+    volumes:
+      - ./config:/etc/prometheus:ro
+      - ./data:/prometheus
+    ports:
+      - "{{ prometheus_port }}:9090"
+{% if prometheus_enable_reverse_proxy %}
+    networks:
+      - {{ prometheus_network_name }}
+      - web-services
+{% else %}
+    networks:
+      - {{ prometheus_network_name }}
+{% endif %}
+    restart: unless-stopped
+    user: "{{ prometheus_user_id }}:{{ prometheus_group_id }}"
+
+{% if prometheus_enable_reverse_proxy %}
+networks:
+  {{ prometheus_network_name }}:
+    external: true
+  web-services:
+    external: true
+{% else %}
+networks:
+  {{ prometheus_network_name }}:
+    external: true
+{% endif %}

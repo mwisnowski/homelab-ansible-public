@@ -1,0 +1,34 @@
+---
+# Gitea configuration
+gitea_version: "latest"
+gitea_http_port: 3000
+gitea_https_port: 3443
+gitea_ssh_port: 2222
+
+# Gitea user and group
+gitea_user: "git"
+gitea_group: "git"
+gitea_uid: 1002
+gitea_gid: 1002
+
+# Gitea directories
+gitea_home: "/opt/docker"
+gitea_container_dir: "{{ gitea_home }}/containers/gitea"
+gitea_data_path: "{{ gitea_container_dir }}/data"
+gitea_ssl_path: "{{ gitea_container_dir }}/ssl"
+gitea_ssh_path: "/home/{{ gitea_user }}/.ssh"
+
+# SSH configuration
+gitea_ssh_wrapper_path: "/usr/local/bin/gitea"
+gitea_docker_shell_path: "{{ gitea_home }}/docker-shell"
+
+# Database configuration (optional)
+gitea_db_type: "sqlite3"
+gitea_db_host: ""
+gitea_db_name: "gitea"
+gitea_db_user: ""
+gitea_db_password: ""
+
+# Reverse proxy integration
+gitea_subdomain: "git"
+gitea_enable_reverse_proxy: false

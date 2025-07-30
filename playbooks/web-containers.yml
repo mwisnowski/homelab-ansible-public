@@ -1,0 +1,96 @@
+---
+- name: Deploy Web Containers with Reverse Proxy
+  hosts: web
+  gather_facts: true
+  become: true
+  
+  pre_tasks:
+    - name: Ensure Docker network exists
+      community.docker.docker_network:
+        name: web-services
+        driver: bridge
+        state: present
+      tags:
+        - network
+        - setup
+
+  roles:
+    - role: reverse-nginx-proxy
+      vars:
+        reverse_proxy_services:
+          - name: grocy
+            subdomain: grocy
+            upstream: "grocy:80"
+          - name: snipeit
+            subdomain: snipeit
+            upstream: "snipeit-app:80"
+      when: reverse_proxy_enabled | default(false)
+
+    - role: grocy
+      vars:
+        grocy_enable_reverse_proxy: "{{ reverse_proxy_enabled | default(false) }}"
+        grocy_subdomain: grocy
+      when: deploy_grocy | default(true)
+
+    - role: snipeit
+      vars:
+        snipeit_enable_reverse_proxy: "{{ reverse_proxy_enabled | default(false) }}"
+        snipeit_subdomain: snipeit
+        snipeit_create_network: false  # Network already created in pre_tasks
+      when: deploy_snipeit | default(true)
+
+  post_tasks:
+    - name: Display Grocy information
+      ansible.builtin.debug:
+        msg: |
+          Grocy Deployed:
+          ===============
+          
+          URL: {{ 'https' if web_containers_ssl_enabled | default(false) else 'http' }}://grocy.{{ reverse_proxy_domain | default('homelab.local') }}
+          Direct Access: http://{{ ansible_default_ipv4.address }}:9283
+          {% if web_containers_ssl_enabled | default(false) %}
+          Direct HTTPS: https://{{ ansible_default_ipv4.address }}:9443
+          {% endif %}
+      when: deploy_grocy | default(true)
+      tags:
+        - info
+
+    - name: Display Snipe-IT information
+      ansible.builtin.debug:
+        msg: |
+          Snipe-IT Deployed:
+          ==================
+          
+          URL: {{ 'https' if web_containers_ssl_enabled | default(false) else 'http' }}://snipeit.{{ reverse_proxy_domain | default('homelab.local') }}
+          Direct Access: http://{{ ansible_default_ipv4.address }}:8080
+          {% if web_containers_ssl_enabled | default(false) %}
+          Direct HTTPS: https://{{ ansible_default_ipv4.address }}:8443
+          {% endif %}
+          
+          Setup Required:
+          Initial setup required - go to any URL above to complete Snipe-IT configuration
+          Default admin credentials will be created during setup
+      when: deploy_snipeit | default(true)
+      tags:
+        - info
+
+    - name: Display combined services summary
+      ansible.builtin.debug:
+        msg: |
+          Web Services Summary:
+          =====================
+          
+          Deployed Services:
+          {% if deploy_grocy | default(true) %}
+          - Grocy: {{ 'https' if web_containers_ssl_enabled | default(false) else 'http' }}://grocy.{{ reverse_proxy_domain | default('homelab.local') }}
+          {% endif %}
+          {% if deploy_snipeit | default(true) %}
+          - Snipe-IT: {{ 'https' if web_containers_ssl_enabled | default(false) else 'http' }}://snipeit.{{ reverse_proxy_domain | default('homelab.local') }}
+          {% endif %}
+          
+          Reverse Proxy: {{ 'Enabled' if reverse_proxy_enabled | default(false) else 'Disabled' }}
+          SSL: {{ 'Enabled' if web_containers_ssl_enabled | default(false) else 'Disabled' }}
+          Domain: {{ reverse_proxy_domain | default('homelab.local') }}
+      tags:
+        - info
+        - summary

@@ -1,0 +1,26 @@
+---
+- name: Include directory setup tasks
+  ansible.builtin.include_tasks: directories.yml
+  tags:
+    - prometheus-directories
+    - setup
+
+- name: Include configuration tasks
+  ansible.builtin.include_tasks: configure.yml
+  tags:
+    - prometheus-configure
+    - configure
+
+- name: Include deployment tasks
+  ansible.builtin.include_tasks: deploy.yml
+  tags:
+    - prometheus-deploy
+    - deploy
+
+- name: Include verification tasks
+  ansible.builtin.include_tasks: verify.yml
+  when: prometheus_health_check_enabled
+  tags:
+    - prometheus-verify
+    - verify
+    - health-check

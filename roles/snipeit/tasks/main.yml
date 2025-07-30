@@ -1,0 +1,37 @@
+---
+- name: Include user setup tasks
+  ansible.builtin.include_tasks: user.yml
+  tags:
+    - snipeit-user
+
+- name: Include directory setup tasks
+  ansible.builtin.include_tasks: directories.yml
+  tags:
+    - snipeit-directories
+    - setup
+
+- name: Include key generation tasks
+  ansible.builtin.include_tasks: generate_key.yml
+  tags:
+    - snipeit-key
+    - configure
+
+- name: Include configuration tasks
+  ansible.builtin.include_tasks: configure.yml
+  tags:
+    - snipeit-configure
+    - configure
+
+- name: Include deployment tasks
+  ansible.builtin.include_tasks: deploy.yml
+  tags:
+    - snipeit-deploy
+    - deploy
+
+- name: Include verification tasks
+  ansible.builtin.include_tasks: verify.yml
+  when: snipeit_health_check_enabled
+  tags:
+    - snipeit-verify
+    - verify
+    - health-check

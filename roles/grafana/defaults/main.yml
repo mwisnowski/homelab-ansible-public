@@ -1,0 +1,77 @@
+---
+# Grafana configuration
+grafana_version: "latest"
+grafana_port: 3000
+grafana_enable_reverse_proxy: false
+grafana_subdomain: "grafana"
+
+# Grafana directories
+grafana_dir: "/opt/docker/containers/monitoring/grafana"
+grafana_data_dir: "{{ grafana_dir }}/data"
+grafana_config_dir: "{{ grafana_dir }}/config"
+grafana_provisioning_dir: "{{ grafana_dir }}/provisioning"
+
+# Grafana user and permissions
+grafana_user_id: "1002"  # grafana user ID used by Grafana container
+grafana_group_id: "1002"
+grafana_user: "grafana"
+grafana_group: "{{ grafana_user }}"
+
+# Network configuration
+grafana_network_name: "monitoring"
+grafana_create_network: false  # Usually created by prometheus role
+
+# Health check configuration
+grafana_health_check_enabled: true
+grafana_health_check_retries: 30
+grafana_health_check_delay: 5
+grafana_health_check_timeout: 10
+
+# Grafana admin settings
+grafana_admin_user: "admin"
+grafana_admin_email: "admin@localhost"
+
+# Grafana configuration
+grafana_allow_sign_up: false
+grafana_anonymous_enabled: false
+grafana_auto_assign_org: true
+grafana_auto_assign_org_id: 1
+grafana_auto_assign_org_role: "Viewer"
+
+# Security settings
+grafana_disable_gravatar: true
+grafana_cookie_secure: false
+grafana_cookie_samesite: "lax"
+
+# Database settings (default to sqlite)
+grafana_database_type: "sqlite3"
+grafana_database_path: "/var/lib/grafana/grafana.db"
+
+# Prometheus data source configuration
+grafana_prometheus_enabled: true
+grafana_prometheus_url: "http://prometheus:9090"
+grafana_prometheus_access: "proxy"
+
+# Additional data sources
+grafana_datasources: []
+# Example:
+# grafana_datasources:
+#   - name: "InfluxDB"
+#     type: "influxdb"
+#     url: "http://influxdb:8086"
+#     database: "metrics"
+
+# Dashboard provisioning
+grafana_dashboards_enabled: true
+grafana_default_dashboards: true
+
+# Plugins
+grafana_install_plugins: []
+# Example:
+# grafana_install_plugins:
+#   - "grafana-clock-panel"
+#   - "grafana-simple-json-datasource"
+
+# Logging
+grafana_log_level: "info"
+grafana_log_mode: "console"

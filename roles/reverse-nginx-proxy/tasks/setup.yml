@@ -1,0 +1,22 @@
+---
+- name: Create NGINX reverse proxy configuration directory
+  ansible.builtin.file:
+    path: "{{ nginx_proxy_conf_dir }}"
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Create NGINX reverse proxy SSL certificate directory
+  ansible.builtin.file:
+    path: "{{ nginx_proxy_ssl_dir }}"
+    state: directory
+    mode: '0755'
+  when: web_containers_ssl_enabled
+  become: true
+
+- name: Create external network for reverse proxy
+  community.docker.docker_network:
+    name: "{{ proxy_network_name }}"
+    driver: bridge
+    state: present
+  become: true

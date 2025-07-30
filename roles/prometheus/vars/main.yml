@@ -1,0 +1,3 @@
+---
+# Override variables specific to environment
+# prometheus_retention_time: "30d"

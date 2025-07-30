@@ -1,0 +1,6 @@
+---
+- name: restart gitea
+  community.docker.docker_compose_v2:
+    project_src: "{{ gitea_container_dir }}"
+    state: present
+    recreate: auto

@@ -1,0 +1,142 @@
+---
+# Snipe-IT Asset Management System
+services:
+  app:
+    image: snipe/snipe-it:{{ snipeit_version | default('latest') }}
+    container_name: snipeit-app
+    restart: unless-stopped
+    volumes:
+      - {{ snipeit_storage_path | default('/opt/docker/containers/snipeit/storage') }}:/var/lib/snipeit
+    ports:
+      - "{{ snipeit_port | default('8080') }}:80"
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    environment:
+      # Basic App Settings
+      - APP_ENV=production
+      - APP_DEBUG={{ snipeit_debug | default('false') }}
+      - APP_KEY={{ snipeit_app_key }}
+      - APP_URL={{ snipeit_app_url | default('http://localhost:8080') }}
+      - APP_TIMEZONE={{ timezone | default('UTC') }}
+      - APP_LOCALE={{ snipeit_locale | default('en-US') }}
+      - MAX_RESULTS=500 
+{% if reverse_proxy_enabled and web_containers_ssl_enabled %}
+      # Force canonical URL for HTTPS proxy setup
+      - APP_FORCE_URL={{ snipeit_app_url }}
+{% endif %}
+
+      # Database Settings
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE={{ snipeit_db_name | default('snipeit') }}
+      - DB_USERNAME={{ snipeit_db_user | default('snipeit') }}
+      - DB_PASSWORD={{ snipeit_db_password }}
+      - DB_PREFIX=null
+      - DB_DUMP_PATH=/usr/bin
+      - DB_DUMP_SKIP_SSL=true
+      - DB_CHARSET=utf8mb4
+      - DB_COLLATION=utf8mb4_unicode_ci
+
+      # File Storage Settings
+      - PRIVATE_FILESYSTEM_DISK=local
+      - PUBLIC_FILESYSTEM_DISK=local_public
+
+      # Mail Settings
+      - MAIL_MAILER={{ snipeit_mail_driver | default('smtp') }}
+      - MAIL_HOST={{ snipeit_mail_host | default('localhost') }}
+      - MAIL_PORT={{ snipeit_mail_port | default('1025') }}
+      - MAIL_USERNAME={{ snipeit_mail_username | default('') }}
+      - MAIL_PASSWORD={{ snipeit_mail_password | default('') }}
+      - MAIL_TLS_VERIFY_PEER={{ snipeit_mail_tls | default('true') }}
+      - MAIL_FROM_ADDR={{ snipeit_mail_from | default('admin@example.com') }}
+      - MAIL_FROM_NAME={{ snipeit_mail_from_name | default('Snipe-IT') }}
+      - MAIL_REPLYTO_ADDR={{ snipeit_mail_reply | default('admin@example.com') }}
+      - MAIL_REPLYTO_NAME={{ snipeit_mail_reply_name | default('Snipe-IT') }}
+
+      # Security Settings
+      - ALLOW_BACKUP_DELETE=false
+      - ALLOW_DATA_PURGE=false
+      - APP_TRUSTED_PROXIES={{ snipeit_trusted_proxies | default('192.168.1.1,10.0.0.1,172.16.0.0/12') }}
+      - ALLOW_IFRAMING=false
+      - REFERRER_POLICY=same-origin
+      - ENABLE_CSP=false
+      - ENABLE_HSTS=false
+{% if reverse_proxy_enabled and web_containers_ssl_enabled %}
+      - APP_FORCE_HTTPS=true
+      - APP_URL_FORCE_HTTPS=true
+      # Additional proxy settings for better URL detection
+      - PROXY_URL_SCHEME=https
+      - FORCE_HTTPS=true
+{% endif %}
+
+      # Session Settings
+      - SESSION_LIFETIME=12000
+      - EXPIRE_ON_CLOSE=false
+      - ENCRYPT=false
+      - COOKIE_NAME=snipeit_session
+      - SECURE_COOKIES={{ snipeit_secure_cookies | default('false') }}
+{% if reverse_proxy_enabled and web_containers_ssl_enabled %}
+      - SESSION_SECURE_COOKIE=true
+{% endif %}
+      - API_TOKEN_EXPIRATION_YEARS=40
+
+      # Cache Settings
+      - CACHE_DRIVER=file
+      - SESSION_DRIVER=file
+      - QUEUE_DRIVER=sync
+      - CACHE_PREFIX=snipeit
+
+      # Image Library
+      - IMAGE_LIB=gd
+
+      # Login Security
+      - LOGIN_MAX_ATTEMPTS=5
+      - LOGIN_LOCKOUT_DURATION=60
+      - RESET_PASSWORD_LINK_EXPIRES=900
+
+      # Logging
+      - LOG_CHANNEL=stderr
+      - LOG_MAX_DAYS=10
+
+    networks:
+      - snipeit-network
+{% if reverse_proxy_enabled | default(false) %}
+      - web-services
+{% endif %}
+
+  db:
+    image: mariadb:{{ snipeit_mariadb_version | default('11.4.7') }}
+    container_name: snipeit-db
+    restart: unless-stopped
+    volumes:
+      - {{ snipeit_db_path | default('/opt/docker/containers/snipeit/db_data') }}:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE={{ snipeit_db_name | default('snipeit') }}
+      - MYSQL_USER={{ snipeit_db_user | default('snipeit') }}
+      - MYSQL_PASSWORD={{ snipeit_db_password }}
+      - MYSQL_ROOT_PASSWORD={{ snipeit_db_root_password }}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 1s
+      retries: 5
+      start_period: 30s
+    networks:
+      - snipeit-network
+
+volumes:
+  snipeit_storage:
+    external: false
+  snipeit_db_data:
+    external: false
+
+networks:
+  snipeit-network:
+    driver: bridge
+{% if reverse_proxy_enabled | default(false) %}
+  web-services:
+    external: true
+{% endif %}

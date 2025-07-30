@@ -1,0 +1,26 @@
+---
+- name: Create Snipe-IT directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+  loop:
+    - "{{ snipeit_dir }}"
+    - "{{ snipeit_storage_dir }}"
+    - "{{ snipeit_db_dir }}"
+  become: true
+  tags:
+    - directories
+
+- name: Set correct permissions for Snipe-IT directories
+  ansible.builtin.file:
+    path: "{{ snipeit_dir }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+    recurse: true
+  become: true
+  tags:
+    - permissions

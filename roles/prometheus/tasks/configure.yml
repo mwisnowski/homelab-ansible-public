@@ -1,0 +1,69 @@
+---
+- name: Check for new hosts in inventory
+  ansible.builtin.debug:
+    msg: "Found {{ groups['linux_hosts'] | default([]) | length }} Linux hosts in inventory: {{ groups['linux_hosts'] | default([]) | join(', ') }}"
+  tags:
+    - host-discovery
+
+- name: Get current Prometheus targets
+  ansible.builtin.shell: |
+    if [ -f "{{ prometheus_config_dir }}/prometheus.yml" ]; then
+      grep -c "job_name: 'node-exporter-" "{{ prometheus_config_dir }}/prometheus.yml" || echo "0"
+    else
+      echo "0"
+    fi
+  register: current_targets_count
+  changed_when: false
+  tags:
+    - host-discovery
+
+- name: Get current Prometheus target hosts
+  ansible.builtin.shell: |
+    if [ -f "{{ prometheus_config_dir }}/prometheus.yml" ]; then
+      grep "job_name: 'node-exporter-" "{{ prometheus_config_dir }}/prometheus.yml" | sed "s/.*node-exporter-\(.*\)'.*/\1/" | sort
+    else
+      echo ""
+    fi
+  register: current_target_hosts
+  changed_when: false
+  tags:
+    - host-discovery
+
+- name: Set expected hosts list
+  ansible.builtin.set_fact:
+    expected_hosts: "{{ groups['linux_hosts'] | default([]) | sort | join('\n') }}"
+  tags:
+    - host-discovery
+
+- name: Debug host comparison
+  ansible.builtin.debug:
+    msg:
+      - "Current targets in Prometheus config:"
+      - "{{ current_target_hosts.stdout.split('\n') if current_target_hosts.stdout else ['None'] }}"
+      - "Expected hosts from inventory:"
+      - "{{ groups['linux_hosts'] | default([]) | sort }}"
+      - "Config regeneration needed: {{ current_target_hosts.stdout != expected_hosts }}"
+  tags:
+    - debug
+
+- name: Force Prometheus config regeneration if hosts differ
+  ansible.builtin.file:
+    path: "{{ prometheus_config_dir }}/prometheus.yml"
+    state: absent
+  when: 
+    - current_target_hosts.stdout != expected_hosts
+  notify: restart prometheus
+  tags:
+    - config-regen
+
+- name: Deploy Prometheus configuration
+  ansible.builtin.template:
+    src: "prometheus.yml.j2"
+    dest: "{{ prometheus_config_dir }}/prometheus.yml"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+    backup: true
+  notify: restart prometheus
+  tags:
+    - config-deploy

@@ -1,0 +1,32 @@
+---
+# Docker configuration
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+
+# Container deployment configuration - Using unified directory structure
+containers_base_dir: "/opt/docker/containers"
+containers_user: "{{ ansible_user }}"
+containers_group: "{{ ansible_user }}"
+
+# Container management settings
+container_restart_policy: "unless-stopped"
+container_pull_policy: "missing"  # always, missing, never
+
+# Network configuration
+container_networks:
+  - name: "web-services"
+    driver: "bridge"
+    create: true
+
+# Health check defaults
+container_health_check_enabled: true
+container_health_check_delay: 5
+container_health_check_retries: 5
+container_health_check_interval: "30s"
+container_health_check_timeout: "10s"
+container_health_check_start_period: "40s"
+
+# Container definitions (empty by default, override in group_vars)
+containers: []

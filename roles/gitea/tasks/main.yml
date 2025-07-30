@@ -1,0 +1,25 @@
+---
+- name: Include user setup tasks
+  ansible.builtin.include_tasks: user.yml
+  tags:
+    - gitea-user
+
+- name: Include directory setup tasks
+  ansible.builtin.include_tasks: directories.yml
+  tags:
+    - gitea-directories
+
+- name: Include SSH setup tasks
+  ansible.builtin.include_tasks: ssh.yml
+  tags:
+    - gitea-ssh
+
+- name: Include container deployment tasks
+  ansible.builtin.include_tasks: deploy.yml
+  tags:
+    - gitea-deploy
+
+- name: Include verification tasks
+  ansible.builtin.include_tasks: verify.yml
+  tags:
+    - gitea-verify

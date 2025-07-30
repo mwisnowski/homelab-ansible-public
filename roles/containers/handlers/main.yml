@@ -1,0 +1,9 @@
+---
+- name: restart containers
+  community.docker.docker_compose_v2:
+    project_src: "{{ item.dir }}"
+    state: present
+    recreate: auto
+  loop: "{{ containers }}"
+  become: true
+  become_user: "{{ item.owner | default(containers_user) }}"

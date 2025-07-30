@@ -1,0 +1,126 @@
+[default]
+# default section
+
+[paths]
+data = {{ grafana_data_dir }}
+temp_data_lifetime = 24h
+logs = /var/log/grafana
+plugins = /var/lib/grafana/plugins
+provisioning = /etc/grafana/provisioning
+
+[server]
+protocol = http
+http_addr =
+http_port = 3000
+domain = localhost
+enforce_domain = false
+root_url = %(protocol)s://%(domain)s:%(http_port)s/
+serve_from_sub_path = false
+router_logging = false
+static_root_path = public
+enable_gzip = false
+cert_file =
+cert_key =
+socket =
+
+[database]
+type = {{ grafana_database_type }}
+{% if grafana_database_type == 'sqlite3' %}
+path = {{ grafana_database_path }}
+{% endif %}
+cache_mode = private
+
+[session]
+provider = file
+provider_config = sessions
+cookie_name = grafana_sess
+cookie_secure = {{ grafana_cookie_secure | lower }}
+cookie_samesite = {{ grafana_cookie_samesite }}
+session_life_time = 86400
+
+[dataproxy]
+logging = false
+
+[analytics]
+reporting_enabled = false
+check_for_updates = true
+
+[security]
+admin_user = {{ grafana_admin_user }}
+admin_password = {{ grafana_admin_password }}
+admin_email = {{ grafana_admin_email }}
+secret_key = SW2YcwTIb9zpOOhoPsMm
+login_remember_days = 7
+login_maximum_inactive_lifetime_duration = 7d
+login_maximum_lifetime_duration = 30d
+cookie_username = grafana_user
+cookie_remember_name = grafana_remember
+disable_gravatar = {{ grafana_disable_gravatar | lower }}
+data_source_proxy_whitelist =
+
+[snapshots]
+external_enabled = true
+external_snapshot_url = https://snapshots-origin.raintank.io
+external_snapshot_name = Publish to snapshot.raintank.io
+remove_expired = true
+
+[dashboards]
+versions_to_keep = 20
+
+[users]
+allow_sign_up = {{ grafana_allow_sign_up | lower }}
+allow_org_create = true
+auto_assign_org = {{ grafana_auto_assign_org | lower }}
+auto_assign_org_id = {{ grafana_auto_assign_org_id }}
+auto_assign_org_role = {{ grafana_auto_assign_org_role }}
+login_hint = email or username
+password_hint = password
+default_theme = dark
+
+[auth]
+disable_login_form = false
+disable_signout_menu = false
+
+[auth.anonymous]
+enabled = {{ grafana_anonymous_enabled | lower }}
+org_name = Main Org.
+org_role = {{ grafana_auto_assign_org_role }}
+
+[log]
+mode = {{ grafana_log_mode }}
+level = {{ grafana_log_level }}
+filters =
+
+[log.console]
+level =
+format = console
+
+[metrics]
+enabled = true
+interval_seconds = 10
+
+[grafana_net]
+url = https://grafana.net
+
+[tracing.jaeger]
+address = localhost:6831
+always_included_tag = tag1:value1
+
+[unified_alerting]
+enabled = true
+execute_alerts = true
+error_or_timeout = alerting
+nodata_or_nullvalues = no_data
+concurrent_render_limit = 5
+
+[explore]
+enabled = true
+
+[help]
+enabled = true
+
+[profile]
+enabled = true
+
+[query_history]
+enabled = true

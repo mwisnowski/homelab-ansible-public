@@ -1,0 +1,118 @@
+---
+# Master playbook for complete homelab setup
+# This playbook orchestrates the entire infrastructure setup process
+
+- name: "Homelab Infrastructure Setup - Phase 1: Connectivity Test"
+  import_playbook: ping_test.yml
+  tags:
+    - always
+    - connectivity
+
+- name: "Homelab Infrastructure Setup - Phase 2: System Updates and Base Packages"
+  import_playbook: system-setup.yml
+  tags:
+    - system-setup
+    - fresh-install
+    - base-packages
+    - updates
+    - update
+    - upgrade
+    - apt
+    - packages
+
+- name: "Homelab Infrastructure Setup - Phase 3: SSH Key Distribution"
+  import_playbook: ssh-key-setup.yml
+  tags:
+    - ssh-keys
+    - ssh-key-setup
+    - ssh-setup
+    - user-setup
+    - security
+
+- name: "Homelab Infrastructure Setup - Phase 4: SSL Certificate Distribution"
+  import_playbook: certificate-distribution.yml
+  tags:
+    - certificates
+    - ssl
+    - cert-distribution
+    - ssl-group
+
+# - name: "Homelab Infrastructure Setup - Phase 5: DNS Configuration Update"
+#   import_playbook: update-dns.yml
+#   tags:
+#     - dns
+#     - update-dns
+#     - configuration
+#     - dns-setup
+#     - packages
+
+- name: "Homelab Infrastructure Setup - Phase 6: Docker Installation"
+  import_playbook: docker-setup.yml
+  tags:
+    - docker
+    - docker-setup
+    - installation
+    - docker-repo
+    - containers
+
+- name: "Homelab Infrastructure Setup - Phase 7: Web Container Deployment"
+  import_playbook: web-containers.yml
+  tags:
+    - web-containers
+    - container-setup
+    - container-deploy
+    - container-verify
+    - reverse-proxy
+    - snipeit
+
+# - name: "Homelab Infrastructure Setup - Phase 8: GitLab Management"
+#   import_playbook: gitlab-omnibus-management.yml
+#   tags:
+#     - gitlab
+#     - gitlab-omnibus
+#     - gitlab-management
+#     - gitlab-check
+#     - gitlab-config
+#     - gitlab-install
+#     - gitlab-status
+#     - gitlab-password
+#     - gitlab-health
+#     - gitlab-repository
+#     - system-setup
+#     - firewall
+#     - ssh-setup
+#     - resource-check
+#     - ssl-setup
+
+- name: "Homelab Infrastructure Setup - Phase 8: Gitea Management"
+  import_playbook: gitea-container.yml
+  tags:
+    - gitea
+    - gitea-container
+    - setup
+    - docker-install
+    - container-setup
+    - container-deploy
+    - container-verify
+    - container-start
+    - container-restart
+    - cert-distribution
+
+- name: "Homelab Infrastructure Setup - Phase 9: Monitoring Infrastructure"
+  import_playbook: monitoring-setup.yml
+  tags:
+    - monitoring
+    - prometheus
+    - grafana
+    - node-exporter
+    - monitoring-server
+    - monitoring-agents
+    - infrastructure-monitoring
+
+- name: "Homelab Infrastructure Setup - Phase 10: Tailscale VPN"
+  import_playbook: tailscale-setup.yml
+  tags:
+    - tailscale
+    - vpn
+    - tailscale-repo
+

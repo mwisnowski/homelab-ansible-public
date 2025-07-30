@@ -1,0 +1,18 @@
+---
+- name: Create 'grafana' group for Grafana
+  ansible.builtin.group:
+    name: "{{ grafana_group }}"
+    gid: "{{ grafana_group_id }}"
+    state: present
+  become: true
+
+- name: Create 'grafana' user for Grafana
+  ansible.builtin.user:
+    name: "{{ grafana_user }}"
+    uid: "{{ grafana_user_id }}"
+    group: "{{ grafana_group }}"
+    groups: docker
+    append: true
+    shell: /bin/bash
+    state: present
+  become: true

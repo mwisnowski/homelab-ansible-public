@@ -1,0 +1,30 @@
+---
+- name: Wait for containers to be ready
+  ansible.builtin.uri:
+    url: "http://{{ ansible_default_ipv4.address }}:{{ item.port }}"
+    method: GET
+    status_code:
+      - 200
+      - 302
+    timeout: "{{ container_health_check_timeout }}"
+  retries: "{{ container_health_check_retries }}"
+  delay: "{{ container_health_check_delay }}"
+  loop: "{{ containers }}"
+  when:
+    - containers is defined and containers | length > 0
+    - item.port is defined
+    - item.health_check | default(false)
+  ignore_errors: true
+
+- name: Display container access information
+  ansible.builtin.debug:
+    msg: |
+      {{ item.name | title }} is accessible at:
+      - Direct HTTP: http://{{ ansible_default_ipv4.address }}:{{ item.port }}
+      {% if item.description is defined %}
+      Description: {{ item.description }}
+      {% endif %}
+  loop: "{{ containers }}"
+  when:
+    - containers is defined and containers | length > 0
+    - item.port is defined

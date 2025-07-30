@@ -1,0 +1,78 @@
+---
+- name: Complete System Setup (Update, Upgrade, Install Utilities)
+  hosts: all
+  become: true
+  gather_facts: true
+  tags:
+    - system-setup
+    - fresh-install
+
+  tasks:
+    - name: Update apt cache (Debian/Ubuntu)
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600  # Cache valid for 1 hour
+      when: ansible_os_family == "Debian"
+      tags:
+        - update
+        - apt
+
+    - name: Upgrade all packages (Debian/Ubuntu)
+      ansible.builtin.apt:
+        upgrade: safe
+      when: ansible_os_family == "Debian"
+      tags:
+        - upgrade
+        - apt
+
+    - name: Install essential packages (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name:
+          - build-essential
+          - git
+          - vim
+          - curl
+          - wget
+          - htop
+          - tar
+          - net-tools
+          - unzip
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - lsb-release
+        state: present
+      when: ansible_os_family == "Debian"
+      tags:
+        - packages
+        - essentials
+
+    - name: Install optional packages (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name:
+          - gimp
+          - synaptic
+        state: present
+      when: 
+        - ansible_os_family == "Debian"
+        - install_optional_packages | default(false)
+      tags:
+        - packages
+        - optional
+
+    - name: Set timezone to US/Los_Angeles
+      ansible.builtin.timezone:
+        name: America/Los_Angeles
+      tags:
+        - timezone
+        - system-config
+
+    - name: Ensure systemd-timesyncd is enabled and started
+      ansible.builtin.systemd:
+        name: systemd-timesyncd
+        enabled: true
+        state: started
+      tags:
+        - timezone
+        - ntp
+        - system-config

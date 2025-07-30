@@ -1,0 +1,28 @@
+# Monitoring Configuration
+monitoring_enabled: true
+prometheus_retention: "15d"
+grafana_admin_password: "admin"  # Change this in production!
+
+# Node Exporter Configuration
+node_exporter_enabled: true
+node_exporter_port: 5100
+node_exporter_version: "1.7.0"
+
+# Monitoring Stack Ports
+prometheus_port: 9090
+grafana_port: 3000
+
+# Monitoring Network
+monitoring_network: "monitoring"
+monitoring_data_path: "/opt/monitoring"
+monitoring_enable_reverse_proxy: true
+
+# Prometheus Scrape Configuration
+prometheus_scrape_interval: "15s"
+prometheus_evaluation_interval: "15s"
+
+# Grafana Configuration
+grafana_plugins:
+  - grafana-clock-panel
+  - grafana-simple-json-datasource
+  - grafana-piechart-panel

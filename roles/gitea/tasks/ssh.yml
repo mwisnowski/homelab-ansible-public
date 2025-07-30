@@ -1,0 +1,25 @@
+---
+- name: Create Gitea SSH wrapper script
+  ansible.builtin.copy:
+    content: |
+      #!/bin/sh
+      ssh -p {{ gitea_ssh_port }} -o StrictHostKeyChecking=no git@127.0.0.1 "SSH_ORIGINAL_COMMAND=\"$SSH_ORIGINAL_COMMAND\" $0 $@"
+    dest: "{{ gitea_ssh_wrapper_path }}"
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Create docker-shell script for git user
+  ansible.builtin.copy:
+    content: |
+      #!/bin/sh
+      /usr/bin/docker exec -i -u git --env SSH_ORIGINAL_COMMAND="$SSH_ORIGINAL_COMMAND" gitea sh "$@"
+    dest: "{{ gitea_docker_shell_path }}"
+    mode: '0755'
+    owner: "{{ gitea_user }}"
+    group: "{{ gitea_group }}"
+
+- name: Set git user shell to docker-shell
+  ansible.builtin.user:
+    name: "{{ gitea_user }}"
+    shell: "{{ gitea_docker_shell_path }}"

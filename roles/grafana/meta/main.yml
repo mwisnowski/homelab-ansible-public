@@ -1,0 +1,17 @@
+---
+dependencies: []
+galaxy_info:
+  role_name: grafana
+  author: Matt Wisnowski
+  company: Wiz-Ops
+  company_url: https://wiz-ops.com
+  description: Grafana visualization and dashboards
+  license: MIT
+  min_ansible_version: "2.18"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - bionic
+        - focal
+        - jammy
+        - noble

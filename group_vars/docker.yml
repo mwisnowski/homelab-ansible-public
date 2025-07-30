@@ -1,0 +1,16 @@
+# Docker group specific configuration
+
+# Container management
+compose_file_paths:
+  - "~/grocy/docker-compose.yml"
+  # Add additional compose file paths as needed
+
+# Docker settings
+docker_cleanup: true
+stabilization_delay: 60
+max_retries: 3
+retry_delay: 10
+
+# Container update settings
+auto_update_containers: false
+update_schedule: "daily"  # Options: daily, weekly, manual

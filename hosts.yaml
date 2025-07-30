@@ -1,0 +1,75 @@
+linux_hosts:
+  children:
+    ansible:
+      hosts:
+        ansible-host:
+          ansible_host: X.X.X.20
+    
+    dns:
+      hosts:
+        ns1:
+          ansible_host: X.X.X.2
+        ns2:
+          ansible_host: X.X.X.3
+
+    gitea:
+      hosts:
+        gitea-prod:
+          ansible_host: X.X.X.30
+        gitea-test:
+          ansible_host: X.X.X.33
+    
+    gitlab:
+      hosts:
+        gitlab_prod:
+          ansible_host: X.X.X.31
+    
+    gitlab_runner:
+      hosts:
+        gitlab-runner1:
+          ansible_host: X.X.X.32
+
+    monitoring:
+      hosts:
+        monitor:
+          ansible_host: X.X.X.11
+
+    tailscale:
+      hosts:
+        jumpbox:
+          ansible_host: X.X.X.40
+
+    web:
+      hosts:
+        web-server:
+          ansible_host: X.X.X.15
+    
+    docker:
+      hosts:
+        gitea-prod:
+          ansible_host: X.X.X.30
+        gitea-test:
+          ansible_host: X.X.X.33
+        monitor:
+          ansible_host: X.X.X.11
+        ns1:
+          ansible_host: X.X.X.2
+        ns2:
+          ansible_host: X.X.X.3
+        web-server:
+          ansible_host: X.X.X.15
+  vars:
+    ansible_user: example
+    ansible_python_interpreter: /usr/bin/python3
+
+hypervisor:
+  hosts:
+    pve1:
+      ansible_host: X.X.X.9
+    pve2:
+      ansible_host: X.X.X.10
+
+windows:
+  hosts:
+      matt-pc:
+        ansible_host: X.X.X.5

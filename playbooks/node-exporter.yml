@@ -1,0 +1,15 @@
+---
+- name: Deploy Node Exporter
+  hosts: linux_hosts
+  become: true
+  gather_facts: true
+  
+  roles:
+    - role: node-exporter
+      vars:
+        node_exporter_port: 5100
+        node_exporter_extra_args:
+          - '--collector.systemd'
+          - '--collector.processes'
+        node_exporter_disabled_collectors:
+          - 'hwmon'

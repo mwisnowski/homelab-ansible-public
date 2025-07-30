@@ -1,0 +1,35 @@
+services:
+  gitea:
+    image: gitea/gitea:{{ gitea_version }}
+    container_name: gitea
+    environment:
+      - USER_UID={{ gitea_uid }}
+      - USER_GID={{ gitea_gid }}
+{% if gitea_db_type != 'sqlite3' %}
+      - DB_TYPE={{ gitea_db_type }}
+      - DB_HOST={{ gitea_db_host }}
+      - DB_NAME={{ gitea_db_name }}
+      - DB_USER={{ gitea_db_user }}
+      - DB_PASSWD={{ gitea_db_password }}
+{% endif %}
+    restart: unless-stopped
+    volumes:
+      - {{ gitea_data_path }}:/data
+      - {{ gitea_ssl_path }}:/ssl:ro
+      - {{ gitea_ssh_path }}:/data/git/.ssh
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "{{ gitea_http_port }}:3000"
+      - "{{ gitea_ssh_port }}:2222"
+{% if web_containers_ssl_enabled | default(false) %}
+      - "{{ gitea_https_port }}:3443"
+{% endif %}
+{% if gitea_enable_reverse_proxy %}
+    networks:
+      - web-services
+
+networks:
+  web-services:
+    external: true
+{% endif %}

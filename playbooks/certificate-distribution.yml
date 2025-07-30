@@ -1,0 +1,190 @@
+---
+- name: Distribute Wildcard SSL Certificates
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    cert_dir: "/etc/ssl/certs/homelab"
+    private_dir: "/etc/ssl/private/homelab"
+    cert_owner: "root"
+    cert_group: "ssl-cert"
+    cert_mode: "0644"
+    private_mode: "0640"
+  
+  tags:
+    - certificates
+    - ssl
+
+  tasks:
+    - name: Ensure ssl-cert group exists
+      ansible.builtin.group:
+        name: ssl-cert
+        state: present
+      tags:
+        - ssl-group
+        - system-setup
+        - certificates-setup
+
+    - name: Create SSL certificate directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ cert_owner }}"
+        group: "{{ cert_group }}"
+        mode: "0755"
+      loop:
+        - "{{ cert_dir }}"
+        - "{{ private_dir }}"
+      tags:
+        - cert-dirs
+        - directories
+        - certificates-setup
+
+    - name: Copy wildcard certificate (PEM format)
+      ansible.builtin.copy:
+        src: "../files/certificates/example.pem"
+        dest: "{{ cert_dir }}/example.pem"
+        owner: "{{ cert_owner }}"
+        group: "{{ cert_group }}"
+        mode: "{{ cert_mode }}"
+        backup: true
+      notify:
+        - restart nginx
+        - restart apache2
+      tags:
+        - cert-pem
+        - certificates-copy
+        - cert-files
+        - ssl-deploy
+
+    - name: Copy wildcard private key
+      ansible.builtin.copy:
+        src: "../files/certificates/example.key"
+        dest: "{{ private_dir }}/example.key"
+        owner: "{{ cert_owner }}"
+        group: "{{ cert_group }}"
+        mode: "{{ private_mode }}"
+        backup: true
+      notify:
+        - restart nginx
+        - restart apache2
+      tags:
+        - cert-key
+        - certificates-copy
+        - cert-files
+        - ssl-deploy
+        - private-keys
+
+    - name: Copy P12 certificate bundle
+      ansible.builtin.copy:
+        src: "../files/certificates/example.p12"
+        dest: "{{ cert_dir }}/example.p12"
+        owner: "{{ cert_owner }}"
+        group: "{{ cert_group }}"
+        mode: "{{ private_mode }}"
+        backup: true
+      tags:
+        - cert-p12
+        - certificates-copy
+        - cert-files
+        - ssl-deploy
+        - cert-bundles
+
+    - name: Create symlinks for common certificate names
+      ansible.builtin.file:
+        src: "{{ cert_dir }}/example.pem"
+        dest: "{{ cert_dir }}/wildcard.crt"
+        state: link
+        force: true
+      tags:
+        - cert-symlinks
+        - symlinks
+        - certificates-setup
+
+    - name: Create symlinks for common private key names
+      ansible.builtin.file:
+        src: "{{ private_dir }}/example.key"
+        dest: "{{ private_dir }}/wildcard.key"
+        state: link
+        force: true
+      tags:
+        - cert-symlinks
+        - symlinks
+        - certificates-setup
+        - private-keys
+
+    - name: Set SELinux context for certificates (if SELinux is enabled)
+      ansible.builtin.sefcontext:
+        target: "{{ item }}"
+        setype: cert_t
+        state: present
+      loop:
+        - "{{ cert_dir }}/example.pem"
+        - "{{ cert_dir }}/wildcard.crt"
+      when: ansible_selinux.status == "enabled"
+      tags:
+        - selinux
+        - certificates
+        - selinux-context
+        - security
+
+    - name: Set SELinux context for private keys (if SELinux is enabled)
+      ansible.builtin.sefcontext:
+        target: "{{ item }}"
+        setype: cert_t
+        state: present
+      loop:
+        - "{{ private_dir }}/example.key"
+        - "{{ private_dir }}/wildcard.key"
+      when: ansible_selinux.status == "enabled"
+      tags:
+        - selinux
+        - certificates
+        - selinux-context
+        - security
+        - private-keys
+
+    - name: Apply SELinux context (if SELinux is enabled)
+      ansible.builtin.command:
+        cmd: "restorecon -Rv {{ cert_dir }} {{ private_dir }}"
+      when: ansible_selinux.status == "enabled"
+      changed_when: false
+      tags:
+        - selinux
+        - certificates
+        - selinux-apply
+        - security
+
+    - name: Display certificate installation summary
+      ansible.builtin.debug:
+        msg: |
+          Certificate installation completed on {{ inventory_hostname }}:
+          - Certificate: {{ cert_dir }}/example.pem
+          - Private Key: {{ private_dir }}/example.key
+          - P12 Bundle: {{ cert_dir }}/example.p12
+          - Symlinks created for wildcard.crt and wildcard.key
+      tags:
+        - summary
+        - info
+        - certificates-info
+
+  handlers:
+    - name: restart nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: restarted
+      failed_when: false
+      tags:
+        - handlers
+        - service-restart
+        - nginx-restart
+
+    - name: restart apache2
+      ansible.builtin.systemd:
+        name: apache2
+        state: restarted
+      failed_when: false
+      tags:
+        - handlers
+        - service-restart
+        - apache-restart

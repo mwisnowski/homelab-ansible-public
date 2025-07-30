@@ -1,0 +1,26 @@
+---
+- name: Include NGINX proxy setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags:
+    - proxy-setup
+
+- name: Include SSL certificate tasks
+  ansible.builtin.include_tasks: ssl.yml
+  when: web_containers_ssl_enabled
+  tags:
+    - ssl-setup
+
+- name: Include NGINX configuration tasks
+  ansible.builtin.include_tasks: configure.yml
+  tags:
+    - proxy-configure
+
+- name: Include proxy deployment tasks
+  ansible.builtin.include_tasks: deploy.yml
+  tags:
+    - proxy-deploy
+
+- name: Include information display tasks
+  ansible.builtin.include_tasks: info.yml
+  tags:
+    - proxy-info

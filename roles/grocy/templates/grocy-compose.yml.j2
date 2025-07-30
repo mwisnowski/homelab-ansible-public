@@ -1,0 +1,25 @@
+---
+services:
+  grocy:
+    image: {{ grocy_image }}
+    container_name: grocy
+    environment:
+      - PUID={{ grocy_user_id }}
+      - PGID={{ grocy_group_id }}
+      - TZ={{ grocy_timezone }}
+    volumes:
+      - ./config:/config
+    ports:
+      - "{{ grocy_port }}:80"
+{% if web_containers_ssl_enabled | default(false) %}
+      - "{{ grocy_https_port }}:443"
+{% endif %}
+    restart: unless-stopped
+{% if grocy_enable_reverse_proxy %}
+    networks:
+      - {{ grocy_network_name }}
+
+networks:
+  {{ grocy_network_name }}:
+    external: true
+{% endif %}

@@ -1,0 +1,23 @@
+---
+- name: Deploy docker-compose files from templates
+  ansible.builtin.template:
+    src: "{{ item.template }}"
+    dest: "{{ item.dir }}/docker-compose.yml"
+    mode: '0644'
+    backup: true
+    owner: "{{ item.owner | default(containers_user) }}"
+    group: "{{ item.group | default(containers_group) }}"
+  loop: "{{ containers }}"
+  become: true
+  notify: restart containers
+  when: containers is defined and containers | length > 0
+
+- name: Start containers using Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ item.dir }}"
+    state: present
+    pull: "{{ container_pull_policy }}"
+  loop: "{{ containers }}"
+  become_user: "{{ item.owner | default(containers_user) }}"
+  register: container_results
+  when: containers is defined and containers | length > 0

@@ -1,0 +1,22 @@
+# Deploy both services (default)
+deploy_grocy: true
+deploy_snipeit: true
+
+# Web Server & Reverse Proxy Configuration
+timezone: America/Los_Angeles
+reverse_proxy_enabled: true
+reverse_proxy_domain: example.com
+reverse_proxy_port: 80
+reverse_proxy_ssl_port: 443
+web_containers_ssl_enabled: true
+
+## Snipe-IT top-level variables
+snipeit_version: "latest"
+snipeit_image: "snipe/snipe-it:{{ snipeit_version }}"
+snipeit_app_key: ""
+snipeit_app_url: "{{ 'https://snipeit.' ~ reverse_proxy_domain if reverse_proxy_enabled and web_containers_ssl_enabled else 'http://' ~ ansible_default_ipv4.address ~ ':' ~ snipeit_port }}"
+snipeit_secure_cookies: "{{ 'true' if reverse_proxy_enabled and web_containers_ssl_enabled else 'false' }}"
+snipeit_db_password: "changeme"
+snipeit_db_root_password: "changeme"
+snipeit_storage_path: "/opt/docker/containers/snipeit/storage"
+snipeit_db_path: "/opt/docker/containers/snipeit/db_data"

@@ -1,0 +1,62 @@
+- name: Re-enable and start systemd-resolved (ensure DNS works for Docker pulls)
+  systemd:
+    name: systemd-resolved
+    enabled: true
+    state: started
+  become: true
+
+- name: Create directory structures for Technitium
+  file:
+    path: "{{ item}}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ install_directory }}"
+
+- name: Create docker-compose file for Technitium
+  template:
+    src: technitium-docker-compose.yml.j2
+    dest: "{{ install_directory }}/docker-compose.yml"
+    mode: '0655'
+  vars:
+    configurations: "{{ dns_configurations }}"
+
+- name: Pull Technitium Docker image (while DNS still works)
+  community.docker.docker_image:
+    name: technitium/dns-server:{{ technitium_image_tag }}
+    source: pull
+    force_source: true
+  register: image_pull_result
+
+- name: Verify image was pulled successfully
+  fail:
+    msg: "Failed to pull Docker image. Cannot proceed without image."
+  when: image_pull_result is failed
+
+- name: Disable and stop systemd-resolved
+  systemd:
+    name: systemd-resolved
+    enabled: false
+    state: stopped
+  become: true
+
+- name: Disable and stop named/bind9 (if present)
+  systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  become: true
+  with_items:
+    - named
+    - bind9
+  ignore_errors: true
+
+- name: Start container for Technitium
+  community.docker.docker_compose_v2:
+    project_src: "{{ install_directory }}"
+    state: present
+    pull: never
+
+#- name: Sync DNS records
+#  include_tasks: sync.yml
+#  tags: sync

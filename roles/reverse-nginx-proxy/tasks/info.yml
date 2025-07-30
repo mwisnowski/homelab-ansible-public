@@ -1,0 +1,32 @@
+---
+- name: Display reverse proxy information
+  ansible.builtin.debug:
+    msg: |
+      Reverse Proxy Configuration:
+      ================================
+      
+      Nginx Proxy Status: {{ 'Running' if reverse_proxy_enabled else 'Disabled' }}
+      
+      {% if reverse_proxy_enabled %}
+      Subdomain Access:
+      {% for service in reverse_proxy_services %}
+      - {{ service.subdomain }}.{{ reverse_proxy_domain }} → {{ service.upstream }}
+      {% endfor %}
+      
+      Standard Ports:
+      - HTTP: {{ reverse_proxy_port }}
+      - HTTPS: {{ reverse_proxy_ssl_port }}
+      
+      SSL Status: {{ 'Enabled' if web_containers_ssl_enabled else 'Disabled' }}
+      
+      DNS Configuration Required:
+      Add these A records to your DNS:
+      {% for service in reverse_proxy_services %}
+      {{ service.subdomain }}.{{ reverse_proxy_domain }} → {{ ansible_default_ipv4.address }}
+      {% endfor %}
+      
+      Or add to your local hosts file:
+      {% for service in reverse_proxy_services %}
+      {{ ansible_default_ipv4.address }} {{ service.subdomain }}.{{ reverse_proxy_domain }}
+      {% endfor %}
+      {% endif %}

@@ -1,0 +1,5 @@
+---
+# Override variables specific to environment
+# snipeit_app_key: "base64:generated_key_here"
+# snipeit_db_password: "secure_database_password"
+# snipeit_db_root_password: "secure_root_password"

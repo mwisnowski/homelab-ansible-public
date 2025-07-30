@@ -1,0 +1,11 @@
+---
+# Override variables (these take precedence over defaults)
+# Use this file for environment-specific or sensitive configurations
+
+# Example: Different version for specific environments
+# node_exporter_version: "1.6.1"
+
+# Example: Custom collectors for specific hosts
+# node_exporter_extra_args:
+#   - '--collector.systemd'
+#   - '--collector.processes'

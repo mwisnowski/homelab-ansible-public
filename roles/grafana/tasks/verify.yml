@@ -1,0 +1,54 @@
+---
+- name: Wait for Grafana to be ready
+  ansible.builtin.uri:
+    url: "http://{{ ansible_default_ipv4.address }}:{{ grafana_port }}/api/health"
+    method: GET
+    status_code: 200
+    timeout: "{{ grafana_health_check_timeout }}"
+  register: grafana_ready
+  until: grafana_ready.status == 200
+  retries: "{{ grafana_health_check_retries }}"
+  delay: "{{ grafana_health_check_delay }}"
+  tags:
+    - health-check
+
+- name: Verify Grafana datasources
+  ansible.builtin.uri:
+    url: "http://{{ ansible_default_ipv4.address }}:{{ grafana_port }}/api/datasources"
+    method: GET
+    status_code: 200
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: yes
+  register: grafana_datasources_check
+  ignore_errors: true
+  tags:
+    - datasources-check
+
+- name: Display Grafana information
+  ansible.builtin.debug:
+    msg: |
+      Grafana Status:
+      ===============
+      
+      Service: {{ grafana_ready.status == 200 | ternary('Running', 'Failed') }}
+      URL: http://{{ ansible_default_ipv4.address }}:{{ grafana_port }}
+      {% if grafana_enable_reverse_proxy and grafana_subdomain is defined %}
+      Subdomain: http://{{ grafana_subdomain }}.{{ reverse_proxy_domain | default('homelab.local') }}
+      {% if web_containers_ssl_enabled | default(false) %}
+      Subdomain HTTPS: https://{{ grafana_subdomain }}.{{ reverse_proxy_domain | default('homelab.local') }}
+      {% endif %}
+      {% endif %}
+      
+      Login Credentials:
+      - Username: {{ grafana_admin_user }}
+      - Password: {{ grafana_admin_password }}
+      
+      Configuration:
+      - Data Directory: {{ grafana_data_dir }}
+      - Config Directory: {{ grafana_config_dir }}
+      - Provisioning: {{ grafana_dashboards_enabled | ternary('Enabled', 'Disabled') }}
+      
+      Datasources: {{ (grafana_datasources_check.json | default([])) | length if grafana_datasources_check.status == 200 else 'Unknown' }}
+  tags:
+    - info

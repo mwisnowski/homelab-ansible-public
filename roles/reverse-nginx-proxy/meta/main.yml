@@ -1,0 +1,18 @@
+---
+dependencies:
+  - role: containers
+galaxy_info:
+  role_name: reverse-nginx-proxy
+  author: Matt Wisnowski
+  company: Wiz-Ops
+  company_url: https://wiz-ops.com
+  description: NGINX reverse proxy with SSL support
+  license: MIT
+  min_ansible_version: "2.18"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - bionic
+        - focal
+        - jammy
+        - noble

@@ -1,0 +1,40 @@
+---
+- name: Deploy Gitea with Reverse Proxy
+  hosts: gitea
+  gather_facts: true
+  become: true
+  
+  pre_tasks:
+    - name: Ensure Docker network exists
+      community.docker.docker_network:
+        name: web-services
+        driver: bridge
+        state: present
+      tags:
+        - network
+        - setup
+  
+  roles:
+    - role: reverse-nginx-proxy
+      vars:
+        reverse_proxy_services:
+          - name: gitea
+            subdomain: gitea
+            upstream: "gitea:3000"
+    
+    - role: gitea
+      vars:
+        gitea_enable_reverse_proxy: true
+        gitea_subdomain: gitea
+
+  post_tasks:
+    - name: Display Gitea information
+      ansible.builtin.debug:
+        msg: |
+          Gitea Deployed:
+          ===============
+          
+          URL: {{ 'https' if reverse_proxy_ssl_enabled | default(false) else 'http' }}://gitea.{{ reverse_proxy_domain | default('homelab.local') }}
+          Direct Access: http://{{ ansible_default_ipv4.address }}:3000
+      tags:
+        - info

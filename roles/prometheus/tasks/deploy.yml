@@ -1,0 +1,30 @@
+---
+- name: Create monitoring Docker network
+  community.docker.docker_network:
+    name: "{{ prometheus_network_name }}"
+    driver: bridge
+    state: present
+  when: prometheus_create_network
+  tags:
+    - network
+
+- name: Deploy Prometheus Docker Compose configuration
+  ansible.builtin.template:
+    src: "prometheus-compose.yml.j2"
+    dest: "{{ prometheus_dir }}/docker-compose.yml"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+    backup: true
+  notify: restart prometheus
+  tags:
+    - container-deploy
+
+- name: Start Prometheus containers
+  community.docker.docker_compose_v2:
+    project_src: "{{ prometheus_dir }}"
+    state: present
+    pull: "{{ container_pull_policy | default('missing') }}"
+  register: prometheus_deployment
+  tags:
+    - container-start

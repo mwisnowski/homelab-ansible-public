@@ -1,0 +1,24 @@
+---
+- name: Deploy Grocy configuration
+  ansible.builtin.template:
+    src: "config.php.j2"
+    dest: "{{ grocy_config_dir }}/config.php"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+    backup: true
+  notify: restart grocy
+  tags:
+    - config-deploy
+
+- name: Create Grocy environment file
+  ansible.builtin.template:
+    src: "grocy.env.j2"
+    dest: "{{ grocy_dir }}/.env"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+    backup: true
+  notify: restart grocy
+  tags:
+    - config-deploy

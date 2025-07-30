@@ -1,0 +1,17 @@
+---
+- name: Create 'node-exporter' group for Node Exporter
+  ansible.builtin.group:
+    name: "{{ node_exporter_group }}"
+    state: present
+
+- name: Create 'node-exporter' user for Node Exporter
+  ansible.builtin.user:
+    name: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    groups: docker
+    append: true
+    shell: /bin/bash
+    create_home: false
+    home: "{{ node_exporter_dir }}"
+    system: true
+    state: present

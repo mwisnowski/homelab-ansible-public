@@ -1,0 +1,91 @@
+---
+- name: Load OS-specific vars
+  include_vars: "{{ ansible_os_family | lower }}.yml"
+  when: ansible_os_family in ['Debian', 'RedHat']
+  tags: 
+    - docker
+    - docker-vars
+    - docker-setup
+
+- name: Load default vars if OS-specific vars aren't loaded
+  include_vars: main.yml
+  when: ansible_os_family not in ['Debian', 'RedHat']
+  tags:
+    - docker
+    - docker-vars
+    - docker-setup
+
+- name: Setup Docker for Debian-based systems
+  include_tasks: setup-debian.yml
+  when: ansible_os_family == "Debian"
+  tags:
+    - docker
+    - docker-setup
+    - docker-repo
+
+- name: Create /opt/docker directory
+  file:
+    path: /opt/docker
+    state: directory
+    mode: '0755'
+  tags:
+    - docker
+    - docker-setup
+    - docker-config
+
+- name: Ensure Docker service is started and enabled at boot
+  service:
+    name: docker
+    state: "{{ docker_service_state }}"
+    enabled: "{{ docker_service_enabled }}"
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: docker_service_manage | bool
+  tags:
+    - docker
+    - docker-service
+    - service
+
+- name: Ensure handlers are notified now to avoid firewall conflicts
+  meta: flush_handlers
+  tags:
+    - docker
+    - docker-service
+
+- name: Install Docker Compose
+  include_tasks: docker-compose.yml
+  when: docker_install_compose | bool
+  tags:
+    - docker
+    - docker-compose
+    - compose
+
+- name: Get Docker group information
+  getent:
+    database: group
+    key: docker
+    split: ':'
+  when: docker_users | length > 0
+  tags:
+    - docker
+    - docker-users
+    - users
+
+- name: Check if there are any users to add to the Docker group
+  set_fact:
+    at_least_one_user_to_modify: true
+  when:
+    - docker_users 
+    - item not in ansible_facts.getent_group["docker"][2]
+  with_items: "{{ docker_users }}"
+  tags:
+    - docker
+    - docker-users
+    - users
+
+- name: Configure Docker users
+  include_tasks: docker-users.yml
+  when: at_least_one_user_to_modify is defined
+  tags:
+    - docker
+    - docker-users
+    - users

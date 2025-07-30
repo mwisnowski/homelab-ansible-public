@@ -1,0 +1,26 @@
+---
+# Reverse proxy configuration - Using unified directory structure
+reverse_proxy_domain: "homelab.local"
+reverse_proxy_port: 80
+reverse_proxy_ssl_port: 443
+
+# SSL Configuration
+web_containers_ssl_enabled: true
+ssl_certificate_path: "/opt/docker/containers/nginx-proxy/ssl/{{ reverse_proxy_domain }}.crt"
+ssl_private_key_path: "/opt/docker/containers/nginx-proxy/ssl/{{ reverse_proxy_domain }}.key"
+generate_self_signed_certs: true
+
+# Certificate paths
+ssl_cert_source_path: "/etc/ssl/certs/homelab/wildcard.crt"
+ssl_key_source_path: "/etc/ssl/private/homelab/wildcard.key"
+
+# NGINX Configuration
+nginx_proxy_dir: "/opt/docker/containers/nginx-proxy"
+nginx_proxy_conf_dir: "{{ nginx_proxy_dir }}/conf.d"
+nginx_proxy_ssl_dir: "{{ nginx_proxy_dir }}/ssl"
+
+# Service definitions (empty by default, override in group_vars)
+reverse_proxy_services: []
+
+# Docker network
+proxy_network_name: "web-services"

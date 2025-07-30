@@ -1,0 +1,30 @@
+---
+- name: Create monitoring Docker network
+  community.docker.docker_network:
+    name: "{{ grafana_network_name }}"
+    driver: bridge
+    state: present
+  when: grafana_create_network
+  tags:
+    - network
+
+- name: Deploy Grafana Docker Compose configuration
+  ansible.builtin.template:
+    src: "grafana-compose.yml.j2"
+    dest: "{{ grafana_dir }}/docker-compose.yml"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+    backup: true
+  notify: restart grafana
+  tags:
+    - container-deploy
+
+- name: Start Grafana containers
+  community.docker.docker_compose_v2:
+    project_src: "{{ grafana_dir }}"
+    state: present
+    pull: "{{ container_pull_policy | default('missing') }}"
+  register: grafana_deployment
+  tags:
+    - container-start

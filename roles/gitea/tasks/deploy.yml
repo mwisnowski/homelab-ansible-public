@@ -1,0 +1,21 @@
+---
+- name: Deploy Gitea Docker Compose configuration
+  ansible.builtin.template:
+    src: "gitea-compose.yml.j2"
+    dest: "{{ gitea_container_dir }}/docker-compose.yml"
+    mode: '0644'
+    backup: true
+    owner: "{{ gitea_user }}"
+    group: "{{ gitea_group }}"
+  notify: restart gitea
+  tags:
+    - container-deploy
+
+- name: Start Gitea containers
+  community.docker.docker_compose_v2:
+    project_src: "{{ gitea_container_dir }}"
+    state: present
+    pull: "{{ container_pull_policy | default('missing') }}"
+  register: gitea_deployment
+  tags:
+    - container-start

@@ -1,0 +1,16 @@
+---
+- name: Include Docker installation tasks
+  ansible.builtin.include_tasks: docker.yml
+  tags:
+    - docker-install
+
+- name: Include Docker setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags:
+    - docker-network
+
+- name: Include Docker system configuration
+  ansible.builtin.include_tasks: system.yml
+  when: docker_system_config_enabled | default(false)
+  tags:
+    - docker-system

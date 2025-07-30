@@ -1,0 +1,24 @@
+---
+- name: Wait for Gitea to be ready
+  ansible.builtin.uri:
+    url: "http://{{ ansible_default_ipv4.address }}:{{ gitea_http_port }}"
+    method: GET
+    status_code: 200
+    timeout: 10
+  retries: 30
+  delay: 5
+  ignore_errors: true
+
+- name: Display Gitea access information
+  ansible.builtin.debug:
+    msg: |
+      Gitea is accessible at:
+      - Direct HTTP: http://{{ ansible_default_ipv4.address }}:{{ gitea_http_port }}
+      - SSH: ssh://git@{{ ansible_default_ipv4.address }}:{{ gitea_ssh_port }}
+      {% if gitea_enable_reverse_proxy and gitea_subdomain is defined %}
+      - Subdomain: http://{{ gitea_subdomain }}.{{ reverse_proxy_domain | default('homelab.local') }}
+      {% if web_containers_ssl_enabled | default(false) %}
+      - Subdomain HTTPS: https://{{ gitea_subdomain }}.{{ reverse_proxy_domain | default('homelab.local') }}
+      - Direct HTTPS: https://{{ ansible_default_ipv4.address }}:{{ gitea_https_port }}
+      {% endif %}
+      {% endif %}

@@ -1,0 +1,46 @@
+---
+- name: Wait for Prometheus to be ready
+  ansible.builtin.uri:
+    url: "http://{{ ansible_default_ipv4.address }}:{{ prometheus_port }}/-/ready"
+    method: GET
+    status_code: 200
+    timeout: "{{ prometheus_health_check_timeout }}"
+  register: prometheus_ready
+  until: prometheus_ready.status == 200
+  retries: "{{ prometheus_health_check_retries }}"
+  delay: "{{ prometheus_health_check_delay }}"
+  tags:
+    - health-check
+
+- name: Verify Prometheus targets
+  ansible.builtin.uri:
+    url: "http://{{ ansible_default_ipv4.address }}:{{ prometheus_port }}/api/v1/targets"
+    method: GET
+    status_code: 200
+  register: prometheus_targets
+  tags:
+    - targets-check
+
+- name: Display Prometheus information
+  ansible.builtin.debug:
+    msg: |
+      Prometheus Status:
+      ==================
+      
+      Service: {{ prometheus_ready.status == 200 | ternary('Running', 'Failed') }}
+      URL: http://{{ ansible_default_ipv4.address }}:{{ prometheus_port }}
+      {% if prometheus_enable_reverse_proxy and prometheus_subdomain is defined %}
+      Subdomain: http://{{ prometheus_subdomain }}.{{ reverse_proxy_domain | default('homelab.local') }}
+      {% if web_containers_ssl_enabled | default(false) %}
+      Subdomain HTTPS: https://{{ prometheus_subdomain }}.{{ reverse_proxy_domain | default('homelab.local') }}
+      {% endif %}
+      {% endif %}
+      
+      Configuration:
+      - Data Directory: {{ prometheus_data_dir }}
+      - Config Directory: {{ prometheus_config_dir }}
+      - Retention Time: {{ prometheus_retention_time }}
+      
+      Discovered Targets: {{ groups['linux_hosts'] | default([]) | length }}
+  tags:
+    - info

@@ -1,0 +1,27 @@
+<?php
+// Grocy configuration file
+
+Setting('CULTURE', '{{ grocy_culture }}');
+Setting('CURRENCY', '{{ grocy_currency }}');
+Setting('CALENDAR_FIRST_DAY_OF_WEEK', {{ grocy_calendar_first_day_of_week }});
+
+// Authentication
+Setting('AUTH_CLASS', '{{ grocy_auth_class }}');
+Setting('LOGIN_REQUIRED', {{ grocy_login_required | ternary('true', 'false') }});
+Setting('DEFAULT_USER_ID', {{ grocy_default_user_id }});
+
+// Security
+Setting('SESSION_COOKIE_SECURE', {{ grocy_session_cookie_secure | ternary('true', 'false') }});
+Setting('SESSION_COOKIE_HTTPONLY', {{ grocy_session_cookie_httponly | ternary('true', 'false') }});
+Setting('SESSION_COOKIE_SAMESITE', '{{ grocy_session_cookie_samesite }}');
+
+// Features
+{% for feature, enabled in grocy_feature_flags.items() %}
+Setting('{{ feature }}', {{ enabled | ternary('true', 'false') }});
+{% endfor %}
+
+// Database
+Setting('DATABASE_TYPE', '{{ grocy_database_type }}');
+{% if grocy_database_type == 'sqlite' %}
+Setting('DATABASE_PATH', '{{ grocy_database_path }}');
+{% endif %}

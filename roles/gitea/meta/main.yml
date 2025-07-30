@@ -1,0 +1,17 @@
+---
+dependencies: []
+galaxy_info:
+  role_name: gitea
+  author: Matt Wisnowski
+  company: Wiz-Ops
+  company_url: https://wiz-ops.com
+  description: Gitea Git repository management
+  license: MIT
+  min_ansible_version: "2.18"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - bionic
+        - focal
+        - jammy
+        - noble

@@ -1,0 +1,43 @@
+services:
+  snipeit-db:
+    image: {{ snipeit_db_image }}
+    container_name: snipeit-db
+    environment:
+      - MYSQL_ROOT_PASSWORD={{ snipeit_db_root_password }}
+      - MYSQL_DATABASE={{ snipeit_db_name }}
+      - MYSQL_USER={{ snipeit_db_user }}
+      - MYSQL_PASSWORD={{ snipeit_db_password }}
+    volumes:
+      - ./db_data:/var/lib/mysql
+    restart: unless-stopped
+{% if snipeit_enable_reverse_proxy %}
+    networks:
+      - {{ snipeit_network_name }}
+{% endif %}
+
+  snipeit:
+    image: {{ snipeit_image }}
+    container_name: snipeit
+    depends_on:
+      - snipeit-db
+    env_file:
+      - .env
+    volumes:
+      - ./storage:/var/lib/snipeit
+    ports:
+      - "{{ snipeit_port }}:80"
+{% if web_containers_ssl_enabled | default(false) %}
+      - "{{ snipeit_https_port }}:443"
+{% endif %}
+{% if snipeit_enable_reverse_proxy %}
+    networks:
+      - {{ snipeit_network_name }}
+{% endif %}
+    restart: unless-stopped
+    user: "{{ snipeit_user_id }}:{{ snipeit_group_id }}"
+
+{% if snipeit_enable_reverse_proxy %}
+networks:
+  {{ snipeit_network_name }}:
+    external: true
+{% endif %}

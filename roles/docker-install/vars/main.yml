@@ -1,0 +1,17 @@
+---
+# Default variables for Docker role
+# This file is loaded when no OS-specific file is found
+
+docker_obsolete_packages:
+  - docker
+  - docker.io
+  - docker-engine
+  - docker-doc
+  - docker-compose
+  - docker-compose-v2
+  - podman-docker
+  - containerd
+  - runc
+
+# Default values for non-specific OS
+docker_repo_url: https://download.docker.com/linux

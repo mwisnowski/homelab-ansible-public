@@ -1,0 +1,123 @@
+---
+- name: Homelab Maintenance and Utilities
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    maintenance_mode: false
+    cleanup_docker: false
+    update_packages: false
+
+  tasks:
+    - name: System maintenance block
+      block:
+        - name: Update package cache
+          ansible.builtin.apt:
+            update_cache: true
+            cache_valid_time: 3600
+          when: 
+            - ansible_os_family == "Debian"
+            - update_packages | default(false)
+          tags:
+            - maintenance
+            - updates
+
+        - name: Upgrade packages
+          ansible.builtin.apt:
+            upgrade: safe
+          when: 
+            - ansible_os_family == "Debian"
+            - update_packages | default(false)
+          tags:
+            - maintenance
+            - updates
+
+        - name: Check disk usage
+          ansible.builtin.command: df -h
+          register: disk_usage
+          changed_when: false
+          tags:
+            - maintenance
+            - monitoring
+
+        - name: Display disk usage
+          ansible.builtin.debug:
+            msg: "{{ disk_usage.stdout_lines }}"
+          tags:
+            - maintenance
+            - monitoring
+
+        - name: Check memory usage
+          ansible.builtin.command: free -h
+          register: memory_usage
+          changed_when: false
+          tags:
+            - maintenance
+            - monitoring
+
+        - name: Display memory usage
+          ansible.builtin.debug:
+            msg: "{{ memory_usage.stdout_lines }}"
+          tags:
+            - maintenance
+            - monitoring
+
+        - name: Clean package cache
+          ansible.builtin.apt:
+            autoclean: true
+            autoremove: true
+          when: 
+            - ansible_os_family == "Debian"
+            - cleanup_docker | default(false)
+          tags:
+            - maintenance
+            - cleanup
+
+    - name: Docker maintenance block
+      block:
+        - name: Clean Docker system
+          ansible.builtin.command: docker system prune -af --volumes
+          when: cleanup_docker | default(false)
+          tags:
+            - docker
+            - cleanup
+
+        - name: Show Docker disk usage
+          ansible.builtin.command: docker system df
+          register: docker_disk_usage
+          changed_when: false
+          ignore_errors: true
+          tags:
+            - docker
+            - monitoring
+
+        - name: Display Docker disk usage
+          ansible.builtin.debug:
+            msg: "{{ docker_disk_usage.stdout_lines }}"
+          when: docker_disk_usage.rc == 0
+          tags:
+            - docker
+            - monitoring
+
+      when: "'docker' in group_names"
+
+    - name: Service status check
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+      register: service_status
+      loop:
+        - docker
+        - ssh
+        - systemd-timesyncd
+      ignore_errors: true
+      tags:
+        - monitoring
+        - services
+
+    - name: Display service status
+      ansible.builtin.debug:
+        msg: "{{ item.item }}: {{ item.status.ActiveState | default('not found') }}"
+      loop: "{{ service_status.results }}"
+      tags:
+        - monitoring
+        - services

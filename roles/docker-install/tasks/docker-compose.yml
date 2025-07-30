@@ -1,0 +1,89 @@
+---
+# Check for docker-compose binary
+- name: Check if docker-compose binary exists
+  stat:
+    path: "{{ docker_compose_path }}"
+  register: docker_compose_binary
+  tags:
+    - docker
+    - docker-compose
+    - compose
+
+# Check current docker-compose version if it exists
+- name: Check current docker-compose version if binary exists
+  command: "{{ docker_compose_path }} --version"
+  register: docker_compose_version
+  check_mode: false
+  changed_when: false
+  failed_when: false
+  when: docker_compose_binary.stat.exists
+  tags:
+    - docker
+    - docker-compose
+    - compose
+
+# Set fact for current version if available
+- name: Set fact for current docker-compose version
+  set_fact:
+    docker_compose_current_version: "{{ docker_compose_version.stdout | regex_search('(\\d+(\\.\\d+)+)') }}"
+  when: >
+    docker_compose_version.stdout is defined
+    and (docker_compose_version.stdout | length > 0)
+  tags:
+    - docker
+    - docker-compose
+    - compose
+
+# Install Docker Compose binary directly
+- name: Install docker-compose binary
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/v2.38.2/docker-compose-linux-x86_64"
+    dest: "{{ docker_compose_path }}"
+    mode: '0755'
+    force: yes
+  when: >
+    not docker_compose_binary.stat.exists or
+    docker_compose_current_version is not defined or
+    docker_compose_current_version != "2.38.2"
+  tags:
+    - docker
+    - docker-compose
+    - compose
+    - compose-install
+
+# Try installing docker compose using the package manager if available
+- name: Try to install docker-compose-plugin via apt
+  apt:
+    name: docker-compose-plugin
+    state: present
+  register: docker_compose_plugin_install
+  ignore_errors: true
+  tags:
+    - docker
+    - docker-compose
+    - compose
+    - compose-install
+
+# Install Docker Compose system packages as an alternative
+- name: Check if docker-compose is available through package manager
+  apt:
+    name: docker-compose
+    state: present
+  ignore_errors: true
+  when: not docker_compose_binary.stat.exists and docker_compose_plugin_install is failed
+  tags:
+    - docker
+    - docker-compose
+    - compose
+    - compose-install
+
+# Final verification
+- name: Verify docker-compose is installed correctly
+  command: "{{ docker_compose_path }} --version"
+  register: docker_compose_final_check
+  changed_when: false
+  tags:
+    - docker
+    - docker-compose
+    - compose
+    - compose-verify

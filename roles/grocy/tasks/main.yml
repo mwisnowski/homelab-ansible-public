@@ -1,0 +1,31 @@
+---
+- name: Include user setup tasks
+  ansible.builtin.include_tasks: user.yml
+  tags:
+    - grocy-user
+
+- name: Include directory setup tasks
+  ansible.builtin.include_tasks: directories.yml
+  tags:
+    - grocy-directories
+    - setup
+
+- name: Include configuration tasks
+  ansible.builtin.include_tasks: configure.yml
+  tags:
+    - grocy-configure
+    - configure
+
+- name: Include deployment tasks
+  ansible.builtin.include_tasks: deploy.yml
+  tags:
+    - grocy-deploy
+    - deploy
+
+- name: Include verification tasks
+  ansible.builtin.include_tasks: verify.yml
+  when: grocy_health_check_enabled
+  tags:
+    - grocy-verify
+    - verify
+    - health-check

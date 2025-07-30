@@ -1,0 +1,31 @@
+# Global Ansible Configuration
+ansible_connection: ssh
+ansible_python_interpreter: /usr/bin/python3
+
+# System Configuration
+timezone: "America/Los_Angeles"
+install_optional_packages: false
+docker_cleanup: false
+
+# Certificate Configuration
+distribute_certificates: false  # Set to true to distribute SSL certificates during system setup
+
+# Docker Configuration
+compose_file_paths: []  # Define per host/group as needed
+
+# Maintenance Configuration
+maintenance_mode: false
+update_packages: false
+
+# DNS Configuration
+dns_repo_url: 'git@github.com:mwisnowski/homelab-dns.git'
+dns_config_dest: '/etc/bind/zones/homelab-dns'
+dns_service_name: 'named'
+git_branch: 'main'
+
+# SSH Key Management Configuration
+ssh_key_user: "example"
+ssh_key_type: "ed25519"
+ssh_key_bits: 256
+generate_ssh_keys: true
+distribute_ssh_keys: true

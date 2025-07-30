@@ -1,0 +1,38 @@
+---
+- name: Deploy Grafana configuration
+  ansible.builtin.template:
+    src: "grafana.ini.j2"
+    dest: "{{ grafana_config_dir }}/grafana.ini"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+    backup: true
+  notify: restart grafana
+  tags:
+    - config-deploy
+
+- name: Deploy Grafana datasources configuration
+  ansible.builtin.template:
+    src: "datasources.yml.j2"
+    dest: "{{ grafana_provisioning_dir }}/datasources/datasources.yml"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+    backup: true
+  when: grafana_prometheus_enabled or grafana_datasources | length > 0
+  notify: restart grafana
+  tags:
+    - datasources-config
+
+- name: Deploy Grafana dashboards configuration
+  ansible.builtin.template:
+    src: "dashboards.yml.j2"
+    dest: "{{ grafana_provisioning_dir }}/dashboards/dashboards.yml"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+    backup: true
+  when: grafana_dashboards_enabled
+  notify: restart grafana
+  tags:
+    - dashboards-config

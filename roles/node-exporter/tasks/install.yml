@@ -1,0 +1,87 @@
+---
+- name: Create node_exporter user
+  ansible.builtin.user:
+    name: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    system: true
+    shell: /bin/false
+    home: "{{ node_exporter_dir }}"
+    create_home: false
+    state: present
+  become: true
+  tags:
+    - user
+    - node-exporter-setup
+
+- name: Create node_exporter directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    mode: '0755'
+  loop:
+    - "{{ node_exporter_dir }}"
+    - "{{ node_exporter_config_dir }}"
+  become: true
+  tags:
+    - directories
+    - node-exporter-setup
+
+- name: Check if Node Exporter binary exists
+  ansible.builtin.stat:
+    path: "{{ node_exporter_binary_path }}"
+  register: node_exporter_binary_stat
+  tags:
+    - check-install
+
+- name: Get installed Node Exporter version
+  ansible.builtin.command: "{{ node_exporter_binary_path }} --version"
+  register: node_exporter_installed_version
+  when: node_exporter_binary_stat.stat.exists
+  changed_when: false
+  failed_when: false
+  tags:
+    - check-install
+
+- name: Download and extract Node Exporter
+  ansible.builtin.unarchive:
+    src: "{{ node_exporter_download_url }}"
+    dest: "/tmp"
+    remote_src: true
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    mode: '0755'
+  when: >
+    not node_exporter_binary_stat.stat.exists or
+    node_exporter_version not in (node_exporter_installed_version.stdout | default(''))
+  become: true
+  tags:
+    - download
+    - node-exporter-install
+
+- name: Copy Node Exporter binary
+  ansible.builtin.copy:
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.{{ node_exporter_arch }}/node_exporter"
+    dest: "{{ node_exporter_binary_path }}"
+    remote_src: true
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    mode: '0755'
+  when: >
+    not node_exporter_binary_stat.stat.exists or
+    node_exporter_version not in (node_exporter_installed_version.stdout | default(''))
+  become: true
+  notify: restart node_exporter
+  tags:
+    - install
+    - node-exporter-install
+
+- name: Clean up downloaded files
+  ansible.builtin.file:
+    path: "/tmp/node_exporter-{{ node_exporter_version }}.{{ node_exporter_arch }}"
+    state: absent
+  when: node_exporter_cleanup_downloads
+  become: true
+  tags:
+    - cleanup

@@ -1,0 +1,36 @@
+---
+- name: Create web services Docker network
+  community.docker.docker_network:
+    name: "{{ snipeit_network_name }}"
+    driver: bridge
+    state: present
+  when: snipeit_create_network
+  tags:
+    - network
+
+- name: Deploy Snipe-IT Docker Compose configuration
+  ansible.builtin.template:
+    src: "snipeit-compose.yml.j2"
+    dest: "{{ snipeit_dir }}/docker-compose.yml"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+    backup: true
+  notify: restart snipeit
+  tags:
+    - container-deploy
+
+- name: Start Snipe-IT containers
+  community.docker.docker_compose_v2:
+    project_src: "{{ snipeit_dir }}"
+    state: present
+    pull: "{{ container_pull_policy | default('missing') }}"
+  register: snipeit_deployment
+  tags:
+    - container-start
+
+- name: Wait for database containers to be ready
+  ansible.builtin.pause:
+    seconds: 30
+  tags:
+    - database-wait

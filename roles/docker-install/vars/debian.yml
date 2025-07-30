@@ -1,0 +1,21 @@
+---
+# Used only for Debian/Ubuntu (Debian OS-Family)
+# https://docs.docker.com/engine/install/debian/#uninstall-old-versions
+
+# Packages to remove before installing Docker
+docker_obsolete_packages:
+  - docker
+  - docker.io
+  - docker-engine
+  - docker-doc
+  - docker-compose
+  - docker-compose-v2
+  - podman-docker
+  - containerd
+  - runc
+
+# APT specific variables
+docker_apt_arch: amd64
+docker_apt_ansible_distribution: "{{ ansible_distribution | lower }}"
+docker_apt_release_channel: stable
+docker_repo_url: https://download.docker.com/linux

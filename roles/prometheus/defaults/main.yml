@@ -1,0 +1,61 @@
+---
+# Prometheus configuration
+prometheus_version: "latest"
+prometheus_port: 9090
+prometheus_enable_reverse_proxy: false
+prometheus_subdomain: "prometheus"
+
+# Prometheus directories
+prometheus_dir: "/opt/docker/containers/monitoring/prometheus"
+prometheus_data_dir: "{{ prometheus_dir }}/data"
+prometheus_config_dir: "{{ prometheus_dir }}/config"
+
+# Prometheus user and permissions
+prometheus_user_id: "65534"  # nobody user ID used by Prometheus container
+prometheus_group_id: "65534"
+
+# Network configuration
+prometheus_network_name: "monitoring"
+prometheus_create_network: true
+
+# Health check configuration
+prometheus_health_check_enabled: true
+prometheus_health_check_retries: 30
+prometheus_health_check_delay: 5
+prometheus_health_check_timeout: 10
+
+# Prometheus configuration settings
+prometheus_retention_time: "15d"
+prometheus_retention_size: "0"  # 0 means no size limit
+prometheus_web_max_connections: 512
+prometheus_web_read_timeout: "5m"
+prometheus_web_enable_lifecycle: true
+prometheus_web_enable_admin_api: false
+
+# Scrape configuration
+prometheus_global_scrape_interval: "15s"
+prometheus_global_evaluation_interval: "15s"
+prometheus_scrape_timeout: "10s"
+
+# Node exporter targets (auto-discovered from inventory)
+prometheus_node_exporter_port: 5100
+prometheus_node_exporter_path: "/metrics"
+
+# Additional static targets
+prometheus_static_targets: []
+# Example:
+# prometheus_static_targets:
+#   - job_name: "custom-service"
+#     targets: ["host1:8080", "host2:8080"]
+#     scrape_interval: "30s"
+
+# Alert manager configuration
+prometheus_alertmanager_enabled: false
+prometheus_alertmanager_url: "http://alertmanager:9093"
+
+# External labels
+prometheus_external_labels: {}
+# Example:
+# prometheus_external_labels:
+#   cluster: "production"
+#   region: "us-west-1"

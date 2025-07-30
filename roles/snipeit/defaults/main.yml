@@ -1,0 +1,62 @@
+---
+# Snipe-IT configuration
+snipeit_version: "latest"
+snipeit_port: 8080
+snipeit_https_port: 8443
+snipeit_enable_reverse_proxy: false
+snipeit_subdomain: "snipeit"
+
+# Snipe-IT directories
+snipeit_dir: "/opt/docker/containers/snipeit"
+snipeit_storage_dir: "{{ snipeit_dir }}/storage"
+snipeit_db_dir: "{{ snipeit_dir }}/db_data"
+
+# Snipe-IT user and permissions
+snipeit_user_id: "1000"
+snipeit_group_id: "1000"
+snipeit_user: "{{ ansible_user }}"
+snipeit_group: "{{ ansible_user }}"
+
+# Network configuration
+snipeit_network_name: "web-services"
+snipeit_create_network: false
+
+# Health check configuration
+snipeit_health_check_enabled: true
+snipeit_health_check_retries: 10
+snipeit_health_check_delay: 5
+snipeit_health_check_timeout: 10
+
+# Database configuration
+snipeit_db_type: "mysql"
+snipeit_db_host: "snipeit-db"
+snipeit_db_name: "snipeit"
+snipeit_db_user: "snipeit"
+snipeit_db_password: "changeme"
+snipeit_db_root_password: "rootchangeme"
+
+# Application configuration
+snipeit_app_env: "production"
+snipeit_app_debug: "false"
+snipeit_app_url: "http://localhost:{{ snipeit_port }}"
+snipeit_app_timezone: "UTC"
+snipeit_app_locale: "en"
+
+# Mail configuration
+snipeit_mail_driver: "smtp"
+snipeit_mail_host: "localhost"
+snipeit_mail_port: "587"
+snipeit_mail_username: ""
+snipeit_mail_password: ""
+snipeit_mail_encryption: "tls"
+snipeit_mail_from_addr: "admin@localhost"
+snipeit_mail_from_name: "Snipe-IT"
+
+# Security settings
+snipeit_session_lifetime: "12000"
+snipeit_expire_on_close: "false"
+snipeit_encrypt_cookies: "true"
+
+# Image configuration
+snipeit_image: "snipe/snipe-it:{{ snipeit_version }}"
+snipeit_db_image: "mysql:8.0"
